@@ -26,79 +26,71 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- FR 5.6: type, category and member filters plus sort order. -->
-    <HorizontalScrollView
+    <!-- FR 5.6: type filter. Chip rows wrap instead of scrolling sideways, so they never
+         compete with swiping between the group tabs. -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/history_type_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_l"
         android:layout_marginTop="@dimen/space_xs"
-        android:scrollbars="none">
+        app:selectionRequired="true"
+        app:singleSelection="true">
 
-        <LinearLayout
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_type_all"
+            style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/space_l">
+            android:checked="true"
+            android:text="@string/filter_all" />
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/history_type_group"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:selectionRequired="true"
-                app:singleLine="true"
-                app:singleSelection="true">
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_type_expenses"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_expenses" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_type_all"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="@string/filter_all" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_type_settlements"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_settlements" />
+    </com.google.android.material.chip.ChipGroup>
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_type_expenses"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_expenses" />
+    <!-- FR 5.6: category and member filters plus the sort order. -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/history_option_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_l">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chip_type_settlements"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_settlements" />
-            </com.google.android.material.chip.ChipGroup>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_category"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_category"
+            app:chipIcon="@drawable/ic_filter" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_category"
-                style="@style/Widget.Material3.Chip.Assist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_s"
-                android:text="@string/filter_category"
-                app:chipIcon="@drawable/ic_filter" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_member"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_member"
+            app:chipIcon="@drawable/ic_person" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_member"
-                style="@style/Widget.Material3.Chip.Assist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_s"
-                android:text="@string/filter_member"
-                app:chipIcon="@drawable/ic_person" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_sort"
-                style="@style/Widget.Material3.Chip.Assist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_s"
-                android:text="@string/sort_newest_first"
-                app:chipIcon="@drawable/ic_sort" />
-        </LinearLayout>
-    </HorizontalScrollView>
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_sort"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_newest_first"
+            app:chipIcon="@drawable/ic_sort" />
+    </com.google.android.material.chip.ChipGroup>
 
     <LinearLayout
         android:layout_width="match_parent"

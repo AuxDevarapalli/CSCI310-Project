@@ -1,0 +1,59 @@
+@startuml seq-expense
+!include style.iuml
+title Figure 4 (revised): Create an expense with a split preview — FR 2.1–2.6, 2.9, 3.1–3.7
+actor User
+participant ":ExpenseFormActivity" as UI
+participant ":ExpenseViewModel" as VM
+participant ":GroupRepository" as GR #D9F2DE
+participant ":UserRepository" as UR #D9F2DE
+participant "Money" as M
+participant ":SplitCalculator" as SC
+participant ":InputValidator" as V
+participant ":DateProvider" as D
+participant ":TransactionRepository" as TR
+participant "db :\nFirebaseFirestore" as DB
+
+User -> UI : tap Add expense
+UI -> VM : CHG(init(groupId, null))
+VM -[#2E7D32]> GR : NEW(getGroup(groupId, cb))
+VM -[#2E7D32]> UR : NEW(getUsers(group.memberIds, cb))
+note right of VM : category chip = OTHER,\npayer = current user, preselected\nas a participant (cannot be unchecked)
+loop each change to total, payer, participants, split method or a share input
+  User -> UI : edit a field
+  UI -> VM : setTotal(text) / setPayer(uid) /\ntoggleParticipant(uid, CHG(checked)) /\nsetSplitMethod(m) / setSplitInput(uid, text)
+  VM -> M : parseDollars(text) or parsePercent(text)
+  M --> VM : cents or basis points (or InvalidAmountException)
+  VM -> VM : recomputePreview()
+  alt splitMethod == EQUAL
+    VM -> SC : splitEqual(totalCents, ids)
+  else splitMethod == PERCENTAGE
+    VM -> SC : splitByPercent(totalCents, CHG(percents : LinkedHashMap))
+    VM -> SC : checkPercentages(percents)
+    VM -> SC : checkSum(totalCents, shares)
+  else splitMethod == EXACT
+    VM -> SC : splitExact(CHG(amounts : LinkedHashMap))
+    VM -> SC : checkSum(totalCents, shares)
+  end
+  SC --> VM : shares, results
+  VM --> UI : CHG(rows : List<ParticipantRow>) and CHG(splitStatus) (LiveData)
+  UI --> User : each participant's share and e.g.\n"Amounts add up to $28.00, not $30.00"
+end
+User -> UI : enter title, pick category, note; tap Save
+UI -> VM : save(title, category, note)
+VM -> D : today(), NEW(nowMillis())
+D --> VM : "YYYY-MM-DD", time
+VM -> VM : expense = new Expense(...)
+VM -> V : validateExpense(expense, group)
+V --> VM : result
+alt result not valid or split not valid
+  VM --> UI : fieldError (LiveData)
+  UI --> User : error shown on the field, nothing saved
+else valid
+  VM -> TR : addExpense(expense, CHG(nowMillis), cb)
+  TR -> DB : add groups/{groupId}/transactions/{newId}
+  DB --> TR : ok
+  TR --> VM : cb.onSuccess(id)
+  VM --> UI : saved (Event)
+  UI --> User : form closes; history, balances and\nsummary reload when shown (FR 2.9)
+end
+@enduml

@@ -1,0 +1,69 @@
+@startuml class-c3-validation
+!pragma layout smetana
+!include style.iuml
+skinparam classAttributeIconSize 0
+hide empty members
+title C3 Business Logic — validation and split engine (revised)
+
+package "logic.validation" {
+  class Money <<utility>> {
+    +{static} NEW(MAX_CENTS : long = 100000000)
+    +{static} parseDollars(text : String) : long
+    +{static} parsePercent(text : String) : int
+    +{static} format(cents : long) : String
+    +{static} NEW(formatPlain(cents : long) : String)
+    +{static} NEW(formatPercent(basisPoints : int) : String)
+  }
+  class InvalidAmountException {
+    +getMessage() : String
+  }
+  class InputValidator <<changed>> {
+    +validateRegistration(name, email, uscId, password)
+    +NEW(validateRegistration(..., confirmPassword))
+    +NEW(validateLogin(email, password))
+    +NEW(validateName() / validateUscEmail() / validateUscId())
+    +NEW(validateGroup(name, description))
+    +validateExpense(expense, group)
+    +validateSettlement(amountCents, owedCents)
+    +NEW(validateNote(note))
+    +{static} NEW(normalizeEmail(email) : String)
+  }
+  class ValidationResult <<changed>> {
+    -valid : boolean
+    -NEW(field : String)
+    -errorMessage : String
+    +{static} NEW(ok() / error(field, message))
+    +isValid() : boolean
+    +getErrorMessage() : String
+    +NEW(getField() : String)
+  }
+  class DateProvider <<changed>> {
+    -NEW(clock : Clock)
+    +today() : String
+    +NEW(nowMillis() : long)
+    +NEW(currentMonth() : String)
+    +{static} NEW(monthOf(date) / shiftMonth(month, n))
+  }
+}
+
+package "logic.split" {
+  class SplitCalculator <<changed>> {
+    +splitEqual(totalCents, ids : List<String>) : List<Share>
+    +checkPercentages(percents : Map) : ValidationResult
+    +CHG(splitByPercent(totalCents, percents : LinkedHashMap) : List<Share>)
+    +CHG(splitExact(amounts : LinkedHashMap) : List<Share>)
+    +checkSum(totalCents, shares) : ValidationResult
+  }
+  note bottom of SplitCalculator
+    FR 3.5: shares are rounded down to the cent and leftover
+    cents go one at a time to the first participants.
+    CHG(Percentage split: participants at 0% never get a rounding cent.)
+  end note
+}
+
+Money ..> InvalidAmountException : throws
+InputValidator ..> ValidationResult
+SplitCalculator ..> ValidationResult
+InputValidator ..> Money
+Money -[hidden]down- DateProvider
+@enduml
