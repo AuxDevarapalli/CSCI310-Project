@@ -1,0 +1,63 @@
+@startuml class-c3-balance-history
+!pragma layout smetana
+!include style.iuml
+skinparam classAttributeIconSize 0
+hide empty members
+title C3 Business Logic — balance, history and summary engines (revised)
+
+package "logic.balance" {
+  class BalanceCalculator <<changed>> {
+    +netBetween(uid, otherUid, transactions) : long
+    +NEW(amountOwed(debtor, creditor, transactions) : long)
+    +computeSummary(uid, members, transactions) : BalanceSummary
+    +NEW(computeTotals(uid, memberIds, transactions) : long[])
+  }
+  class BalanceSummary {
+    -totalToPayCents : long
+    -totalToReceiveCents : long
+    +getPairs() : List<PairBalance>
+    +NEW(isAllSettled() : boolean)
+  }
+  class PairBalance <<changed>> {
+    -CHG(otherUser : User)
+    -netCents : long
+    +isSettled() : boolean
+    +NEW(owesCurrentUser() / currentUserOwes())
+  }
+}
+
+package "logic.history" {
+  class HistoryFilter {
+    +apply(all, query : HistoryQuery) : List<Transaction>
+  }
+  class HistoryQuery <<changed>> {
+    -keyword : String
+    -NEW(typeFilter : TransactionType)
+    -NEW(categoryFilter : Category)
+    -memberFilter : String
+    -sortOrder : SortOrder
+    +{static} defaults() : HistoryQuery
+    +NEW(copy() / isFiltered())
+  }
+  enum SortOrder {
+    NEWEST_FIRST
+    OLDEST_FIRST
+  }
+  class SummaryCalculator <<changed>> {
+    +calculate(transactions, yearMonth) : MonthlySummary
+    +NEW(monthsWithExpenses(transactions) : List<String>)
+  }
+  class MonthlySummary {
+    -yearMonth : String
+    -expenseCount : int
+    -totalCents : long
+    +getCategoryTotals() : Map<Category, Long>
+  }
+}
+
+BalanceCalculator ..> BalanceSummary : creates
+BalanceSummary "1" *-- "*" PairBalance
+HistoryFilter ..> HistoryQuery
+HistoryQuery --> SortOrder
+SummaryCalculator ..> MonthlySummary : creates
+@enduml

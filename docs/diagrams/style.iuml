@@ -1,0 +1,27 @@
+' Shared look for every SplitSmart diagram.
+' Change markers (Project 2.3): green = NEW since the 2.2 design, orange = CHANGED.
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam roundCorner 6
+skinparam ArrowColor #444444
+skinparam BackgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+  BackgroundColor<<new>> #D9F2DE
+  BorderColor<<new>> #2E7D32
+  BackgroundColor<<changed>> #FFE7C2
+  BorderColor<<changed>> #C76E00
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #555555
+  LifeLineBorderColor #999999
+}
+!define NEW(x) <b><color:#1B7F3B>x</color></b>
+!define CHG(x) <b><color:#B35C00>x</color></b>
