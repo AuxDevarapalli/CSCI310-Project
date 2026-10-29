@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme variants of the USC color scheme. -->
+    <color name="md_primary">#FFB4A8</color>
+    <color name="md_on_primary">#690001</color>
+    <color name="md_primary_container">#930002</color>
+    <color name="md_on_primary_container">#FFDAD5</color>
+    <color name="md_secondary">#EBC248</color>
+    <color name="md_on_secondary">#3E2E00</color>
+    <color name="md_secondary_container">#594400</color>
+    <color name="md_on_secondary_container">#FFDF96</color>
+    <color name="md_tertiary">#C9C759</color>
+    <color name="md_on_tertiary">#323200</color>
+    <color name="md_tertiary_container">#484700</color>
+    <color name="md_on_tertiary_container">#E6E472</color>
+
+    <color name="amount_positive">#7FD99A</color>
+    <color name="amount_negative">#FFB4AB</color>
+    <color name="amount_neutral">#B4AEAD</color>
+    <color name="positive_container">#0F3D1D</color>
+    <color name="negative_container">#5C1A16</color>
+
+    <color name="category_food">#FDBA74</color>
+    <color name="category_housing">#93C5FD</color>
+    <color name="category_transportation">#6EE7B7</color>
+    <color name="category_entertainment">#D8B4FE</color>
+    <color name="category_other">#D6D3D1</color>
+    <color name="settlement_accent">#EBC248</color>
+    <color name="on_category">#1C1B1F</color>
+</resources>

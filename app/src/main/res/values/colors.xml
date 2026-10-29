@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- USC cardinal and gold, expressed as a Material 3 color scheme (light). -->
+    <color name="usc_cardinal">#990000</color>
+    <color name="usc_gold">#FFCC00</color>
+
+    <color name="md_primary">#990000</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#FFDAD5</color>
+    <color name="md_on_primary_container">#410001</color>
+    <color name="md_secondary">#765B00</color>
+    <color name="md_on_secondary">#FFFFFF</color>
+    <color name="md_secondary_container">#FFDF96</color>
+    <color name="md_on_secondary_container">#251A00</color>
+    <color name="md_tertiary">#5F5E00</color>
+    <color name="md_on_tertiary">#FFFFFF</color>
+    <color name="md_tertiary_container">#E6E472</color>
+    <color name="md_on_tertiary_container">#1C1C00</color>
+
+    <!-- Money colors: green for money owed to you, red for money you owe. -->
+    <color name="amount_positive">#1B7F3B</color>
+    <color name="amount_negative">#BA1A1A</color>
+    <color name="amount_neutral">#6F6B6A</color>
+    <color name="positive_container">#D7F5DD</color>
+    <color name="negative_container">#FFDAD6</color>
+
+    <!-- Avatar backgrounds, picked by hashing the user id. -->
+    <color name="avatar_1">#990000</color>
+    <color name="avatar_2">#8C6D00</color>
+    <color name="avatar_3">#2E6B3F</color>
+    <color name="avatar_4">#28609A</color>
+    <color name="avatar_5">#7A4F9E</color>
+    <color name="avatar_6">#A3542A</color>
+    <color name="avatar_7">#00796B</color>
+    <color name="avatar_8">#5D5F63</color>
+
+    <!-- Category accents used in history rows and the monthly summary. -->
+    <color name="category_food">#C2410C</color>
+    <color name="category_housing">#1D4ED8</color>
+    <color name="category_transportation">#047857</color>
+    <color name="category_entertainment">#7E22CE</color>
+    <color name="category_other">#57534E</color>
+    <color name="settlement_accent">#8C6D00</color>
+    <!-- Icon color drawn on top of the category and settlement colors. -->
+    <color name="on_category">#FFFFFF</color>
+
+    <color name="launcher_background">#990000</color>
+</resources>
