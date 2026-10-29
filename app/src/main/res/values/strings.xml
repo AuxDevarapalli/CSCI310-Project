@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SplitSmart</string>
+
+    <!-- Setup -->
+    <string name="setup_title">Firebase setup needed</string>
+    <string name="setup_message">This build of SplitSmart does not include a Firebase configuration, so it cannot reach the shared database yet.\n\n1. Create a Firebase project and add an Android app with the package name com.team04.splitsmart.\n2. Download google-services.json and place it in the app/ folder of the project.\n3. Enable Email/Password sign-in and create a Cloud Firestore database.\n4. Rebuild and run the app.\n\nThe README in the repository walks through every step.</string>
+
+    <!-- Login and registration (FR 1.1 to FR 1.3) -->
+    <string name="login_tagline">Split shared expenses with fellow Trojans</string>
+    <string name="hint_usc_email">USC email</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_confirm_password">Confirm password</string>
+    <string name="hint_name">Name</string>
+    <string name="hint_usc_id">USC ID</string>
+    <string name="helper_usc_email">Must end in @usc.edu</string>
+    <string name="helper_usc_id">Exactly 10 digits</string>
+    <string name="helper_password">At least 6 characters</string>
+    <string name="helper_locked_field">Can\'t be changed after registration</string>
+    <string name="title_create_account">Create account</string>
+    <string name="register_intro">SplitSmart is for USC students and alumni.</string>
+    <string name="register_locked_note">Your USC email and USC ID can\'t be changed after you register.</string>
+    <string name="action_log_in">Log in</string>
+    <string name="action_create_account">Create account</string>
+    <string name="action_go_to_register">New here? Create an account</string>
+    <string name="action_go_to_login">Already have an account? Log in</string>
+
+    <!-- Profile -->
+    <string name="title_profile">Profile</string>
+    <string name="action_profile">Profile</string>
+    <string name="action_save_name">Save name</string>
+    <string name="action_log_out">Log out</string>
+    <string name="confirm_logout_title">Log out?</string>
+    <string name="confirm_logout_message">You\'ll need your USC email and password to log back in.</string>
+
+    <!-- Group list -->
+    <string name="subtitle_your_groups">Your groups</string>
+    <string name="label_overall_to_pay">You owe in total</string>
+    <string name="label_overall_to_receive">You\'re owed in total</string>
+    <string name="empty_groups_title">No groups yet</string>
+    <string name="empty_groups_message">Create a group for your roommates, trip or student org, then add members by their USC email.</string>
+    <string name="action_new_group">New group</string>
+    <string name="group_meta_owner">%1$s · You\'re the owner</string>
+    <string name="balance_settled_short">settled up</string>
+    <string name="balance_you_owe_short">you owe %1$s</string>
+    <string name="balance_you_are_owed_short">you\'re owed %1$s</string>
+    <plurals name="member_count">
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
+    </plurals>
+
+    <!-- Group form (FR 1.4, FR 1.7) -->
+    <string name="title_new_group">New group</string>
+    <string name="title_edit_group">Edit group</string>
+    <string name="hint_group_name">Group name</string>
+    <string name="hint_group_description">Description</string>
+    <string name="helper_optional">Optional</string>
+    <string name="group_form_owner_note">You\'ll be the owner of this group. Only you can edit it, add members or delete it.</string>
+    <string name="action_create_group">Create group</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="error_owner_only_edit">Only the group owner can edit this group.</string>
+    <string name="message_group_updated">Group updated</string>
+    <string name="message_group_created">Group created. Add members by their USC email.</string>
+    <string name="message_group_deleted">Group deleted</string>
+
+    <!-- Group detail -->
+    <string name="tab_history">History</string>
+    <string name="tab_balances">Balances</string>
+    <string name="tab_summary">Summary</string>
+    <string name="tab_members">Members</string>
+    <string name="action_add_expense">Add expense</string>
+    <string name="action_settle_up">Settle up</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_edit_group">Edit group</string>
+    <string name="action_delete_group">Delete group</string>
+    <string name="confirm_delete_group_title">Delete \"%1$s\"?</string>
+    <string name="confirm_delete_group_message">This permanently deletes the group and all of its expenses and settlements for every member. This can\'t be undone.</string>
+
+    <!-- History (FR 5.4 to FR 5.6) -->
+    <string name="hint_search_history">Search titles and notes</string>
+    <string name="filter_all">All</string>
+    <string name="filter_expenses">Expenses</string>
+    <string name="filter_settlements">Settlements</string>
+    <string name="filter_category">Category</string>
+    <string name="filter_all_categories">All categories</string>
+    <string name="filter_member">Member</string>
+    <string name="filter_anyone">Anyone</string>
+    <string name="sort_newest_first">Newest first</string>
+    <string name="action_clear_filters">Clear filters</string>
+    <string name="history_count_filtered">Showing %1$d of %2$d</string>
+    <plurals name="transaction_count">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+    <string name="empty_history_title">No transactions yet</string>
+    <string name="empty_history_message">Add an expense or record a settlement to get started.</string>
+    <string name="empty_filtered_title">Nothing matches</string>
+    <string name="empty_filtered_message">Try a different keyword or clear the filters.</string>
+    <string name="member_you">%1$s (you)</string>
+
+    <!-- Balances (FR 4.1 to FR 4.5) -->
+    <string name="label_total_to_pay">Total to pay</string>
+    <string name="label_total_to_receive">Total to receive</string>
+    <string name="section_individual_balances">Balance with each member</string>
+    <string name="balance_owes_you">%1$s owes you %2$s</string>
+    <string name="balance_you_owe">You owe %1$s %2$s</string>
+    <string name="balance_settled_up">You and %1$s are settled up</string>
+    <string name="balance_no_other_members">Nobody else is in this group yet. Add members from the Members tab.</string>
+    <string name="balance_explanation">Each balance adds up every expense and settlement between you and that member. Debts are never combined across different people, and the two totals are always shown separately.</string>
+    <string name="action_share_balances">Share balances</string>
+    <string name="share_balances_header">SplitSmart balances · %1$s</string>
+
+    <!-- Monthly summary (FR 5.7) -->
+    <string name="summary_tap_to_choose">Tap to choose a month</string>
+    <string name="title_choose_month">Choose a month</string>
+    <string name="label_expense_count">Expenses</string>
+    <string name="label_total_spending">Total spending</string>
+    <string name="section_by_category">Spending by category</string>
+    <string name="summary_no_expenses">No expenses were created in this month.</string>
+    <string name="summary_settlements_note">Totals add up the full amount of each expense created in the selected month. Settlements are not included.</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="cd_previous_month">Previous month</string>
+    <string name="cd_next_month">Next month</string>
+
+    <!-- Members (FR 1.5, FR 1.6) -->
+    <string name="members_add_title">Add a member</string>
+    <string name="members_add_hint">Enter the USC email of someone who already has a SplitSmart account.</string>
+    <string name="hint_member_email">Member\'s USC email</string>
+    <string name="action_add_member">Add member</string>
+    <string name="members_owner_only">Only the group owner can add members.</string>
+    <string name="message_member_added">Added %1$s to the group</string>
+    <string name="badge_owner">Owner</string>
+
+    <!-- Expense form (FR 2.x, FR 3.x) -->
+    <string name="title_add_expense">Add expense</string>
+    <string name="title_edit_expense">Edit expense</string>
+    <string name="hint_expense_title">Title</string>
+    <string name="hint_total_amount">Total amount</string>
+    <string name="helper_amount">US dollars, up to 2 decimal places</string>
+    <string name="label_category">Category</string>
+    <string name="category_food">Food</string>
+    <string name="category_housing">Housing</string>
+    <string name="category_transportation">Transportation</string>
+    <string name="category_entertainment">Entertainment</string>
+    <string name="category_other">Other</string>
+    <string name="hint_paid_by">Paid by</string>
+    <string name="title_who_paid">Who paid?</string>
+    <string name="label_split_method">Split method</string>
+    <string name="split_equal">Equal</string>
+    <string name="split_exact">Exact $</string>
+    <string name="split_percent">Percent</string>
+    <string name="label_participants">Participants and shares</string>
+    <string name="participants_hint">The payer always takes part. Pick at least one other member.</string>
+    <string name="action_fill_evenly">Fill evenly</string>
+    <string name="action_select_all">Select all</string>
+    <string name="badge_payer">Payer</string>
+    <string name="share_none">—</string>
+    <string name="hint_note_optional">Note (optional)</string>
+    <string name="date_recorded_automatically">Date: %1$s · recorded automatically</string>
+    <string name="action_save_expense">Save expense</string>
+
+    <!-- Settlement form (FR 5.1 to FR 5.3) -->
+    <string name="title_record_settlement">Settle up</string>
+    <string name="title_edit_settlement">Edit settlement</string>
+    <string name="title_who_did_you_pay">Who did you pay?</string>
+    <string name="settlement_intro">Record a payment you made to another member outside SplitSmart, for example with Venmo, Zelle or cash.</string>
+    <string name="hint_paid_to">Paid to</string>
+    <string name="hint_amount_paid">Amount paid</string>
+    <string name="action_pay_full_amount">Pay the full amount</string>
+    <string name="action_record_settlement">Record settlement</string>
+    <string name="settlement_choose_receiver">Choose the member you paid.</string>
+    <string name="settlement_owe_nobody">You don\'t owe anyone in this group right now, so there is nothing to settle.</string>
+    <string name="settlement_you_owe">You owe %1$s %2$s.</string>
+    <string name="settlement_up_to">Up to %1$s</string>
+    <string name="settlement_owe_nothing">You don\'t owe %1$s anything right now, so there is nothing to settle.</string>
+    <string name="settlement_no_other_members">There are no other members in this group yet.</string>
+    <string name="settlement_option_owed">%1$s · you owe %2$s</string>
+    <string name="settlement_option_nothing">%1$s · nothing owed</string>
+
+    <!-- Transaction detail (FR 5.5) -->
+    <string name="title_expense_details">Expense details</string>
+    <string name="title_settlement_details">Settlement details</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="section_shares">Shares</string>
+    <string name="section_people">People</string>
+    <string name="section_note">Note</string>
+    <string name="detail_created_on">Created %1$s</string>
+    <string name="detail_paid_by">Paid by %1$s</string>
+    <string name="detail_split_summary">%1$s among %2$d people</string>
+    <string name="detail_share_payer">Paid the bill</string>
+    <string name="detail_share_owes">Owes %1$s %2$s</string>
+    <string name="detail_settlement_paid">%1$s paid %2$s</string>
+    <string name="detail_settlement_explanation">A payment made outside SplitSmart</string>
+    <string name="detail_settlement_from">Paid</string>
+    <string name="detail_settlement_to">Received</string>
+    <string name="detail_recorded_by">Recorded by %1$s on %2$s</string>
+    <string name="detail_only_creator_expense">Only %1$s can edit or delete this expense.</string>
+    <string name="detail_only_creator_settlement">Only %1$s can edit or delete this settlement.</string>
+    <string name="confirm_delete_expense_title">Delete this expense?</string>
+    <string name="confirm_delete_expense_message">The expense will be removed for everyone and all balances and summaries will be updated.</string>
+    <string name="confirm_delete_settlement_title">Delete this settlement?</string>
+    <string name="confirm_delete_settlement_message">The settlement will be removed for everyone and the balance between the two members will be updated.</string>
+    <string name="message_expense_deleted">Expense deleted</string>
+    <string name="message_settlement_deleted">Settlement deleted</string>
+
+    <!-- Shared -->
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+</resources>
