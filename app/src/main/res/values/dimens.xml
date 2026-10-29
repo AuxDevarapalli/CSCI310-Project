@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_s">8dp</dimen>
+    <dimen name="space_m">12dp</dimen>
+    <dimen name="space_l">16dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+    <dimen name="space_xxl">32dp</dimen>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="avatar_size">40dp</dimen>
+    <dimen name="avatar_size_large">72dp</dimen>
+    <dimen name="icon_badge_size">40dp</dimen>
+    <dimen name="logo_size">88dp</dimen>
+    <dimen name="fab_clearance">96dp</dimen>
+    <dimen name="split_input_width">112dp</dimen>
+    <dimen name="split_preview_width">76dp</dimen>
+    <dimen name="max_form_width">480dp</dimen>
+</resources>
