@@ -1,0 +1,40 @@
+# Android / Gradle build output
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+build/
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Local configuration (Android SDK path, signing keys, etc.)
+local.properties
+*.jks
+*.keystore
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+.navigation/
+
+# Logs and OS files
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
+
+# Firebase emulator and Node tooling (rules tests)
+node_modules/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# NOTE: app/google-services.json is intentionally NOT ignored so the whole team shares one
+# Firebase project. Keep this repository private (see README).
