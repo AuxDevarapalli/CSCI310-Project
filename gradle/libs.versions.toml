@@ -1,0 +1,40 @@
+# Dependency versions. These match combinations used by current, widely used Android
+# projects (Capacitor 8 / React Native Firebase), built with AGP 8.13 and compileSdk 36.
+[versions]
+agp = "8.13.0"
+googleServices = "4.4.4"
+firebaseAuth = "24.0.1"
+firebaseFirestore = "26.0.2"
+appcompat = "1.7.1"
+material = "1.13.0"
+activity = "1.11.0"
+fragment = "1.8.9"
+lifecycle = "2.8.7"
+recyclerview = "1.3.2"
+swiperefreshlayout = "1.1.0"
+viewpager2 = "1.1.0"
+coordinatorlayout = "1.3.0"
+junit = "4.13.2"
+androidxJunit = "1.3.0"
+espressoCore = "3.7.0"
+
+[libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "lifecycle" }
+androidx-lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata", version.ref = "lifecycle" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+androidx-coordinatorlayout = { group = "androidx.coordinatorlayout", name = "coordinatorlayout", version.ref = "coordinatorlayout" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
