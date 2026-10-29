@@ -38,3 +38,6 @@ ui-debug.log
 
 # NOTE: app/google-services.json is intentionally NOT ignored so the whole team shares one
 # Firebase project. Keep this repository private (see README).
+
+# Generated from docs/implementation-document.md by docs/tools/build_html.py
+docs/implementation-document.html

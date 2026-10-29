@@ -1,0 +1,121 @@
+@startuml class-c2
+!pragma layout smetana
+!include style.iuml
+skinparam classAttributeIconSize 0
+hide empty members
+title C2 ViewModels — revised class diagram (every ViewModel extends BaseViewModel)
+
+package "viewmodel" {
+  abstract class BaseViewModel <<changed>> {
+    #NEW(loading : LiveData<Boolean>)
+    #CHG(error : LiveData<Event<String>>)
+    #NEW(info : LiveData<Event<String>>)
+    #NEW(fieldError : LiveData<ValidationResult>)
+    +clearError() : void
+  }
+  class ViewModelFactory {
+    -container : AppContainer
+    +create(modelClass : Class<T>) : T
+  }
+  class AppContainer <<changed>> {
+    -auth / user / group / transaction repositories
+    -validator, split, balance, history, summary engines
+    -dateProvider : DateProvider
+    +{static} NEW(createDefault() : AppContainer)
+  }
+  class "Event<T>" as Event <<new>> {
+    +getContentIfNotHandled() : T
+  }
+
+  class AuthViewModel {
+    +register(name, email, uscId, password, confirm)
+    +login(email, password)
+    +NEW(isLoggedIn() : boolean)
+  }
+  class ProfileViewModel <<changed>> {
+    +NEW(loadProfile())
+    +updateName(name)
+    +NEW(logout())
+  }
+  class GroupListViewModel <<changed>> {
+    +loadGroups()
+    +NEW(getGroups() : LiveData<List<GroupListItem>>)
+  }
+  class GroupViewModel <<changed>> {
+    +NEW(load(groupId))
+    +createGroup(name, description)
+    +NEW(updateGroup(name, description))
+    +addMember(email)
+    +NEW(deleteGroup() / isOwner())
+  }
+
+  class ExpenseViewModel <<changed>> {
+    +CHG(init(groupId, expenseId))
+    +setTotal(text) / setPayer(uid)
+    +toggleParticipant(uid, checked)
+    +setSplitMethod(m) / setSplitInput(uid, text)
+    +NEW(selectAllParticipants() / fillEvenly())
+    +recomputePreview()
+    +save(title, category, note)
+  }
+  class SettlementViewModel <<changed>> {
+    +CHG(init(groupId, settlementId, receiverId))
+    +selectReceiver(uid)
+    +CHG(save(amountText, note))
+  }
+  class TransactionDetailViewModel <<changed>> {
+    +NEW(load(groupId, transactionId))
+    +NEW(canEdit() : boolean)
+    +CHG(deleteTransaction())
+  }
+
+  class BalanceViewModel {
+    +loadBalances(groupId)
+  }
+  class HistoryViewModel <<changed>> {
+    +load(groupId)
+    +applyQuery(q : HistoryQuery)
+    +setKeyword() / setTypeFilter() / setCategoryFilter()
+    +setMemberFilter() / setSortOrder()
+    +NEW(toggleSortOrder() / clearFilters())
+  }
+  class SummaryViewModel <<changed>> {
+    +NEW(load(groupId))
+    +loadMonth(month)
+    +NEW(previousMonth() / nextMonth())
+  }
+
+  class GroupListItem <<new>> {
+    group + totalToPayCents + totalToReceiveCents
+  }
+  class ParticipantRow <<new>> {
+    user, payer, checked, inputText,
+    previewCents, inputError
+  }
+  class SplitStatus <<new>> {
+    message, valid
+  }
+  class ReceiverOption <<new>> {
+    user, owedCents
+  }
+}
+
+BaseViewModel <|-- AuthViewModel
+BaseViewModel <|-- ProfileViewModel
+BaseViewModel <|-- GroupListViewModel
+BaseViewModel <|-- GroupViewModel
+GroupViewModel -[hidden]down- ExpenseViewModel
+AuthViewModel -[hidden]down- SettlementViewModel
+ProfileViewModel -[hidden]down- TransactionDetailViewModel
+ExpenseViewModel -[hidden]down- HistoryViewModel
+SettlementViewModel -[hidden]down- BalanceViewModel
+TransactionDetailViewModel -[hidden]down- SummaryViewModel
+ViewModelFactory --> AppContainer
+ViewModelFactory ..> BaseViewModel : creates
+BaseViewModel ..> Event
+GroupListViewModel ..> GroupListItem
+ExpenseViewModel ..> ParticipantRow
+ExpenseViewModel ..> SplitStatus
+SettlementViewModel ..> ReceiverOption
+
+@enduml

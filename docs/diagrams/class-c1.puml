@@ -1,0 +1,110 @@
+@startuml class-c1
+!pragma layout smetana
+!include style.iuml
+skinparam classAttributeIconSize 0
+hide empty members
+title C1 UI Views — revised class diagram
+
+package "ui" {
+  abstract class BaseActivity <<new>> {
+    #ensureSignedIn() : boolean
+    #setContentWithInsets(layout)
+    #obtainViewModel(type) : T
+    #observeMessages(viewModel)
+  }
+  class LoginActivity {
+    -vm : AuthViewModel
+    -onLoginClick()
+  }
+  class RegisterActivity {
+    -vm : AuthViewModel
+    -onRegisterClick()
+  }
+  class GroupListActivity {
+    -vm : GroupListViewModel
+    -adapter : GroupAdapter
+  }
+  class ProfileActivity {
+    -vm : ProfileViewModel
+    -CHG(saveName())
+  }
+  class GroupFormActivity {
+    -vm : GroupViewModel
+  }
+  class GroupDetailActivity <<changed>> {
+    -vm : GroupViewModel
+    -NEW(pager : ViewPager2 with 4 tabs)
+    -NEW(refreshAll())
+  }
+  class ExpenseFormActivity {
+    -vm : ExpenseViewModel
+  }
+  class SettlementFormActivity {
+    -vm : SettlementViewModel
+  }
+  class TransactionDetailActivity {
+    -vm : TransactionDetailViewModel
+    -confirmDelete()
+  }
+
+  abstract class BaseFragment <<new>> {
+    #obtainViewModel(type) : T
+    #obtainActivityViewModel(type) : T
+  }
+  interface Refreshable <<new>> {
+    +refresh()
+  }
+  class HistoryFragment {
+    -vm : HistoryViewModel
+    -adapter : TransactionAdapter
+  }
+  class BalanceFragment {
+    -vm : BalanceViewModel
+  }
+  class SummaryFragment {
+    -vm : SummaryViewModel
+  }
+  class MembersFragment <<new>> {
+    -vm : GroupViewModel (shared)
+  }
+  class GroupPagerAdapter <<new>>
+  class ConfirmDialog {
+    -onConfirm : Runnable
+    +show()
+  }
+  class GroupAdapter <<new>>
+  class TransactionAdapter <<new>>
+  class UiUtils <<new>> {
+    +{static} applySystemBarInsets(root)
+    +{static} bindAvatar(view, user)
+  }
+}
+
+BaseActivity <|-- LoginActivity
+BaseActivity <|-- RegisterActivity
+BaseActivity <|-- GroupListActivity
+BaseActivity <|-- ProfileActivity
+BaseActivity <|-- GroupFormActivity
+LoginActivity -[hidden]down- GroupDetailActivity
+RegisterActivity -[hidden]down- ExpenseFormActivity
+GroupListActivity -[hidden]down- SettlementFormActivity
+ProfileActivity -[hidden]down- TransactionDetailActivity
+GroupDetailActivity *-- GroupPagerAdapter
+GroupPagerAdapter ..> HistoryFragment
+GroupPagerAdapter ..> BalanceFragment
+GroupPagerAdapter ..> SummaryFragment
+GroupPagerAdapter ..> MembersFragment
+BaseFragment <|-- HistoryFragment
+BaseFragment <|-- BalanceFragment
+BaseFragment <|-- SummaryFragment
+BaseFragment <|-- MembersFragment
+Refreshable <|.. HistoryFragment
+Refreshable <|.. BalanceFragment
+Refreshable <|.. SummaryFragment
+Refreshable <|.. MembersFragment
+GroupListActivity *-- GroupAdapter
+HistoryFragment *-- TransactionAdapter
+TransactionDetailActivity ..> ConfirmDialog
+GroupDetailActivity ..> ConfirmDialog
+
+@enduml

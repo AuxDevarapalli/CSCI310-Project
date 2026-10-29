@@ -209,6 +209,9 @@ public final class UiUtils {
 
     /** What a transaction means for the current user, with a color. Extra feature. */
     public static Effect effectFor(Transaction transaction, String currentUid) {
+        if (currentUid == null) {
+            return new Effect("", R.color.amount_neutral);
+        }
         if (transaction instanceof Expense) {
             Expense expense = (Expense) transaction;
             if (currentUid.equals(expense.getPayerId())) {
