@@ -1,0 +1,136 @@
+rules_version = '2';
+
+// SplitSmart Cloud Firestore security rules (design section 5.3, NFR 4).
+//
+// How to install (pick one):
+//   * Firebase console -> Firestore Database -> Rules -> paste this file -> Publish
+//   * Firebase CLI from the repository root:  firebase deploy --only firestore:rules
+//
+// Summary:
+//   * Only members can read a group and its transactions.
+//   * Only the owner can edit a group, add members, or delete it.
+//   * Only a transaction's creator can edit or delete it (the owner may also delete
+//     transactions so that deleting a group removes everything in it, FR 1.7).
+//   * The USC email and USC ID can never change after registration (FR 1.3), and each
+//     USC ID can be claimed by only one account (FR 1.2).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUscEmail(email) {
+      return email is string && email.matches('^[a-z0-9._%+-]+@usc[.]edu$');
+    }
+
+    function isUscId(id) {
+      return id is string && id.matches('^[0-9]{10}$');
+    }
+
+    function isName(name) {
+      return name is string && name.size() > 0 && name.size() <= 50;
+    }
+
+    // users/{uid}: name, uscEmail (lower-case), uscId, createdAt
+    match /users/{uid} {
+      // Any signed-in user can read profiles: needed to show member names and to add a
+      // member by USC email (FR 1.5).
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'uscEmail', 'uscId', 'createdAt'])
+        && isName(request.resource.data.name)
+        && isUscEmail(request.resource.data.uscEmail)
+        && request.resource.data.uscEmail == request.auth.token.email
+        && isUscId(request.resource.data.uscId);
+      // Only the name can change (FR 1.3).
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && isName(request.resource.data.name);
+      allow delete: if false;
+    }
+
+    // uscIds/{uscId}: { uid } -- reserves a USC ID for exactly one account (FR 1.2).
+    match /uscIds/{uscId} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && isUscId(uscId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // groups/{groupId}: name, description, ownerId, memberIds, createdAt
+    match /groups/{groupId} {
+      // Members only (NFR 4). Also satisfies the "memberIds array-contains my uid" query.
+      // Reading a group that no longer exists is allowed so the app can say "deleted"
+      // instead of "permission denied"; it reveals nothing.
+      allow read: if signedIn()
+        && (resource == null || request.auth.uid in resource.data.memberIds);
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      // Owner-only edits (FR 1.5, FR 1.7). Ownership cannot change and the owner stays a member.
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.auth.uid in request.resource.data.memberIds
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      // groups/{groupId}/transactions/{transactionId}: expenses and settlements
+      match /transactions/{transactionId} {
+        function group() {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data;
+        }
+
+        function isMember() {
+          return signedIn() && request.auth.uid in group().memberIds;
+        }
+
+        // FR 2.2, 2.3, 2.6: positive total, payer and participants are members, the payer
+        // participates, and there are at least two participants.
+        function isValidExpense(data) {
+          return data.type == 'EXPENSE'
+            && data.totalCents is int
+            && data.totalCents > 0
+            && data.payerId in group().memberIds
+            && group().memberIds.hasAll(data.participantIds)
+            && data.participantIds.size() >= 2
+            && data.payerId in data.participantIds;
+        }
+
+        // FR 5.1, 5.2: the member who owes money records the payment to another member.
+        function isValidSettlement(data) {
+          return data.type == 'SETTLEMENT'
+            && data.amountCents is int
+            && data.amountCents > 0
+            && data.payerId == request.auth.uid
+            && data.receiverId in group().memberIds
+            && data.receiverId != data.payerId;
+        }
+
+        allow read: if isMember();
+        allow create: if isMember()
+          && request.resource.data.creatorId == request.auth.uid
+          && (isValidExpense(request.resource.data)
+              || isValidSettlement(request.resource.data));
+        // Only the creator edits (FR 2.7, FR 5.3); creator and type never change.
+        allow update: if isMember()
+          && resource.data.creatorId == request.auth.uid
+          && request.resource.data.creatorId == resource.data.creatorId
+          && request.resource.data.type == resource.data.type
+          && (isValidExpense(request.resource.data)
+              || isValidSettlement(request.resource.data));
+        allow delete: if isMember()
+          && (resource.data.creatorId == request.auth.uid
+              || group().ownerId == request.auth.uid);
+      }
+    }
+  }
+}
