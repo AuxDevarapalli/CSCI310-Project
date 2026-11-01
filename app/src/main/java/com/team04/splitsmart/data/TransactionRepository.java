@@ -4,6 +4,7 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.team04.splitsmart.model.Expense;
 import com.team04.splitsmart.model.Settlement;
 import com.team04.splitsmart.model.Transaction;
@@ -47,6 +48,15 @@ public class TransactionRepository {
                     callback.onSuccess(result);
                 })
                 .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
+    }
+
+    /**
+     * Calls {@code onChange} whenever any member adds, edits or deletes an expense or settlement
+     * in the group, so open screens update without a manual refresh.
+     */
+    public Subscription observeTransactions(String groupId, Runnable onChange) {
+        return new Subscription(transactions(groupId).addSnapshotListener(
+                Subscription.changesOnly(QuerySnapshot::getMetadata, onChange)));
     }
 
     /** One transaction, for the detail screen and edit forms (FR 5.5). */

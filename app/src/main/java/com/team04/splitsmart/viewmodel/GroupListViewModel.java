@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.team04.splitsmart.data.AuthRepository;
 import com.team04.splitsmart.data.DataCallback;
 import com.team04.splitsmart.data.GroupRepository;
+import com.team04.splitsmart.data.Subscription;
 import com.team04.splitsmart.data.TransactionRepository;
 import com.team04.splitsmart.logic.balance.BalanceCalculator;
 import com.team04.splitsmart.model.Group;
@@ -28,6 +29,7 @@ public class GroupListViewModel extends BaseViewModel {
     private final MutableLiveData<String> loadError = new MutableLiveData<>();
     /** Increases on every reload so answers to an older reload are ignored. */
     private int generation;
+    private Subscription groupsSubscription;
 
     public GroupListViewModel(AuthRepository authRepository, GroupRepository groupRepository,
                               TransactionRepository transactionRepository,
@@ -49,6 +51,25 @@ public class GroupListViewModel extends BaseViewModel {
 
     public String getCurrentUserId() {
         return authRepository.getCurrentUserId();
+    }
+
+    /**
+     * Reloads the list whenever the user is added to or removed from a group, or a group is
+     * renamed or deleted, on any phone.
+     */
+    public void startLiveUpdates() {
+        String uid = authRepository.getCurrentUserId();
+        if (groupsSubscription == null && uid != null) {
+            groupsSubscription = groupRepository.observeGroupsForUser(uid, this::loadGroups);
+        }
+    }
+
+    @Override
+    protected void onCleared() {
+        if (groupsSubscription != null) {
+            groupsSubscription.remove();
+            groupsSubscription = null;
+        }
     }
 
     public void loadGroups() {

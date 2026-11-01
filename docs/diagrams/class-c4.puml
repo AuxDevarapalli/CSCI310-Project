@@ -29,6 +29,10 @@ package "data" {
     +NEW(updateGroup(groupId, name, description, cb))
     +CHG(addMember(groupId, uid, cb))
     +NEW(deleteGroup(groupId, cb))
+    +NEW(removeMember(groupId, uid, cb))
+    +NEW(transferOwnership(groupId, newOwnerId, cb))
+    +NEW(observeGroup(groupId, onChange) : Subscription)
+    +NEW(observeGroupsForUser(uid, onChange) : Subscription)
   }
   class TransactionRepository <<changed>> {
     -db : FirebaseFirestore
@@ -39,6 +43,15 @@ package "data" {
     +CHG(addSettlement(settlement, nowMillis, cb))
     +NEW(updateSettlement(settlement, nowMillis, cb))
     +NEW(deleteTransaction(groupId, id, cb))
+    +NEW(observeTransactions(groupId, onChange) : Subscription)
+  }
+  class Subscription <<new>> {
+    -registration : ListenerRegistration
+    +remove()
+    ~{static} changesOnly(metadata, onChange)
+  }
+  class FirebaseEmulators <<new>> {
+    +{static} connect(host)
   }
   interface "DataCallback<T>" as DataCallback <<changed>> {
     +onSuccess(value : T) : void
@@ -73,5 +86,7 @@ RepositoryException -[hidden]down- FirebaseAuth
 FirestoreMapper ..> DocumentSnapshot
 AuthRepository --> FirebaseAuth
 TransactionRepository --> FirebaseFirestore
+TransactionRepository ..> Subscription : creates
+GroupRepository ..> Subscription : creates
 GroupRepository --> FirebaseFirestore
 @enduml

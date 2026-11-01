@@ -4,6 +4,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 import com.team04.splitsmart.model.Group;
 
@@ -51,7 +52,14 @@ public class GroupRepository {
                                 "This group no longer exists.", true, null));
                     }
                 })
-                .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
+                .addOnFailureListener(e -> {
+                    RepositoryException error = FirebaseErrors.wrap(e);
+                    // Losing read access means the user was removed from the group.
+                    callback.onFailure(error.isNotFound()
+                            ? new RepositoryException(
+                                    "You are no longer a member of this group.", true, e)
+                            : error);
+                });
     }
 
     /** Every group the user belongs to, newest first (FR 1.6). */
@@ -72,6 +80,21 @@ public class GroupRepository {
                 .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
     }
 
+    /** Calls {@code onChange} whenever the group's details, members or owner change elsewhere. */
+    public Subscription observeGroup(String groupId, Runnable onChange) {
+        return new Subscription(db.collection(FirestoreMapper.GROUPS).document(groupId)
+                .addSnapshotListener(Subscription.changesOnly(DocumentSnapshot::getMetadata,
+                        onChange)));
+    }
+
+    /** Calls {@code onChange} whenever the user is added to, removed from or loses a group. */
+    public Subscription observeGroupsForUser(String uid, Runnable onChange) {
+        return new Subscription(db.collection(FirestoreMapper.GROUPS)
+                .whereArrayContains(FirestoreMapper.MEMBER_IDS, uid)
+                .addSnapshotListener(Subscription.changesOnly(QuerySnapshot::getMetadata,
+                        onChange)));
+    }
+
     /** Owner-only edit of the name and description (FR 1.7). */
     public void updateGroup(String groupId, String name, String description,
                             DataCallback<Void> callback) {
@@ -87,6 +110,25 @@ public class GroupRepository {
     public void addMember(String groupId, String uid, DataCallback<Void> callback) {
         db.collection(FirestoreMapper.GROUPS).document(groupId)
                 .update(FirestoreMapper.MEMBER_IDS, FieldValue.arrayUnion(uid))
+                .addOnSuccessListener(ignored -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
+    }
+
+    /**
+     * Removes a member: the owner removing someone, or a member leaving. The caller checks first
+     * that the member is settled up with everyone, so no debt disappears with them.
+     */
+    public void removeMember(String groupId, String uid, DataCallback<Void> callback) {
+        db.collection(FirestoreMapper.GROUPS).document(groupId)
+                .update(FirestoreMapper.MEMBER_IDS, FieldValue.arrayRemove(uid))
+                .addOnSuccessListener(ignored -> callback.onSuccess(null))
+                .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
+    }
+
+    /** Owner-only: makes another member the owner. */
+    public void transferOwnership(String groupId, String newOwnerId, DataCallback<Void> callback) {
+        db.collection(FirestoreMapper.GROUPS).document(groupId)
+                .update(FirestoreMapper.OWNER_ID, newOwnerId)
                 .addOnSuccessListener(ignored -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));
     }
