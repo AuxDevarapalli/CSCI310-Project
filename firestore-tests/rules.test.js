@@ -9,6 +9,7 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
   arrayUnion,
   collection,
   deleteDoc,
@@ -195,10 +196,40 @@ describe('groups/{groupId} (FR 1.4 - 1.7)', () => {
     await assertFails(updateDoc(doc(as(BOB), 'groups', GROUP), { memberIds: arrayUnion('dave') }));
   });
 
-  test('ownership cannot be changed and the owner cannot be removed', async () => {
+  test('the owner cannot be removed, and ownership only goes to an existing member', async () => {
     await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB])));
-    await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP), { ownerId: BOB }));
     await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP), { memberIds: [BOB] }));
+    await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP), { ownerId: CAROL }));
+    await assertFails(updateDoc(doc(as(BOB), 'groups', GROUP), { ownerId: BOB }));
+    // Transferring ownership may not change anything else at the same time.
+    await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP),
+      { ownerId: BOB, memberIds: [BOB] }));
+  });
+
+  test('the owner can transfer ownership to another member and stays a member', async () => {
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB])));
+    await assertSucceeds(updateDoc(doc(as(ALICE), 'groups', GROUP), { ownerId: BOB }));
+    // Alice is no longer the owner, so she can no longer edit the group.
+    await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP), { name: 'Not mine now' }));
+    await assertSucceeds(updateDoc(doc(as(BOB), 'groups', GROUP), { name: 'Mine now' }));
+  });
+
+  test('the owner can remove another member', async () => {
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB, CAROL])));
+    await assertSucceeds(updateDoc(doc(as(ALICE), 'groups', GROUP),
+      { memberIds: arrayRemove(BOB) }));
+    await assertFails(getDoc(doc(as(BOB), 'groups', GROUP)));
+  });
+
+  test('a member can leave, but cannot remove anyone else', async () => {
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB, CAROL])));
+    await assertFails(updateDoc(doc(as(BOB), 'groups', GROUP), { memberIds: arrayRemove(CAROL) }));
+    await assertFails(updateDoc(doc(as(BOB), 'groups', GROUP), { memberIds: [ALICE] }));
+    await assertFails(updateDoc(doc(as(BOB), 'groups', GROUP),
+      { memberIds: arrayRemove(BOB), name: 'Bye' }));
+    await assertSucceeds(updateDoc(doc(as(BOB), 'groups', GROUP), { memberIds: arrayRemove(BOB) }));
+    // The owner cannot "leave" this way; they must transfer ownership first.
+    await assertFails(updateDoc(doc(as(ALICE), 'groups', GROUP), { memberIds: [CAROL] }));
   });
 
   test('only the owner can delete the group, together with all its transactions', async () => {

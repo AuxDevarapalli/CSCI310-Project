@@ -85,6 +85,18 @@ public class Group {
         return new Group(id, name, description, ownerId, ids, createdAt);
     }
 
+    /** Returns a copy without {@code uid} (a member was removed or left). */
+    public Group withoutMember(String uid) {
+        List<String> ids = new ArrayList<>(memberIds);
+        ids.remove(uid);
+        return new Group(id, name, description, ownerId, ids, createdAt);
+    }
+
+    /** Returns a copy owned by {@code newOwnerId}, who must already be a member. */
+    public Group withOwner(String newOwnerId) {
+        return new Group(id, name, description, newOwnerId, memberIds, createdAt);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

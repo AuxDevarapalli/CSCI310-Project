@@ -34,7 +34,8 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
         }
         if (modelClass == GroupViewModel.class) {
             return (T) new GroupViewModel(c.getAuthRepository(), c.getGroupRepository(),
-                    c.getUserRepository(), c.getValidator(), c.getDateProvider());
+                    c.getUserRepository(), c.getTransactionRepository(),
+                    c.getBalanceCalculator(), c.getValidator(), c.getDateProvider());
         }
         if (modelClass == ExpenseViewModel.class) {
             return (T) new ExpenseViewModel(c.getAuthRepository(), c.getGroupRepository(),
