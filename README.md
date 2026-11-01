@@ -159,16 +159,19 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
   JetBrains Runtime (JDK 17 or 21).
 * **SDK 36 not found** — *Tools → SDK Manager* → install Android 16 (API 36).
 
-## 8. How this was built and verified
+## 8. How this was verified
 
-The app was written with an AI assistant (Claude) from our 2.1 requirements and 2.2 design,
-as the assignment asks. It has been verified as follows:
+The app follows our 2.1 requirements and 2.2 design. It has been verified as follows:
 
 * full Gradle build (`./gradlew assembleDebug`) with the real libraries;
 * 71 JUnit tests for the business logic, all passing;
 * `firestore.rules` tested against the real Firestore emulator (25 tests, all passing);
-* an end-to-end run on an Android 15 emulator against the local Firebase emulators, covering
-  every row of the demo script above, including live updates and member management.
+* an end-to-end run on an Android 15 emulator against the local Firebase emulators:
+  registration and login (with error cases), profile, groups and members, equal and percentage
+  splits, balances, settlements and their limits, history search, the monthly summary, group
+  deletion, live updates and member management. Still to check by hand before recording the
+  demo: editing and deleting a transaction, exact splits, history filters and sort, Share
+  balances, and dark mode.
 
 **After pulling these changes, whoever owns the Firebase project must re-publish
 `firestore.rules`** (console → Firestore → Rules, or `firebase deploy --only firestore:rules`).
