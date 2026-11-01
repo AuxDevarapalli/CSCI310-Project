@@ -13,13 +13,15 @@ package "model" {
     -uscId : String
     +NEW(getInitials() / withName(name))
   }
-  class Group {
+  class Group <<changed>> {
     -id, name, description : String
     -ownerId : String
     -memberIds : List<String>
     -createdAt : long
     +isMember(uid) : boolean
     +NEW(isOwner(uid) : boolean)
+    +NEW(withMember(uid) / withoutMember(uid))
+    +NEW(withOwner(newOwnerId))
   }
   abstract class Transaction <<changed>> {
     -id : String

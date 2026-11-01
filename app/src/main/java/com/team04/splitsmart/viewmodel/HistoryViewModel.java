@@ -130,6 +130,7 @@ public class HistoryViewModel extends BaseViewModel {
                         all = new ArrayList<>(transactions);
                         totalCount.setValue(all.size());
                         applyQuery(query);
+                        loadFormerMembers(transactions);
                     }
 
                     @Override
@@ -137,6 +138,32 @@ public class HistoryViewModel extends BaseViewModel {
                         fail(e);
                     }
                 });
+    }
+
+    /** Names of people who appear in old transactions but have since left the group. */
+    private void loadFormerMembers(List<Transaction> transactions) {
+        Map<String, User> known = users.getValue() == null
+                ? new HashMap<>() : new HashMap<>(users.getValue());
+        List<String> missing = FormerMembers.missingUserIds(transactions, known.keySet());
+        if (missing.isEmpty()) {
+            return;
+        }
+        userRepository.getUsers(missing, new DataCallback<List<User>>() {
+            @Override
+            public void onSuccess(List<User> loaded) {
+                for (User user : loaded) {
+                    known.put(user.getUid(), user);
+                }
+                users.setValue(known);
+                // Re-publish so rows are rebound with the newly known names.
+                visible.setValue(filter.apply(all, query));
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // Names fall back to "Unknown user"; the history itself is already shown.
+            }
+        });
     }
 
     private void fail(Exception e) {

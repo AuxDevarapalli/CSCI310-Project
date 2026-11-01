@@ -176,6 +176,11 @@ public class SettlementViewModel extends BaseViewModel {
                                 fail("Only the person who recorded this settlement can edit it.");
                                 return;
                             }
+                            if (!group.getMemberIds().containsAll(found.getInvolvedUserIds())) {
+                                fail("This settlement involves someone who has left the group, "
+                                        + "so it can no longer be edited.");
+                                return;
+                            }
                             editing = (Settlement) found;
                             existingSettlement.setValue(editing);
                             date.setValue(editing.getDate());

@@ -60,9 +60,10 @@ single-field filter, and sorting happens in the app.
 ./gradlew test
 ```
 
-Runs 68 JUnit tests for the business logic (money parsing/formatting, every split method
+Runs 71 JUnit tests for the business logic (money parsing/formatting, every split method
 and the FR 3.5 rounding rule, pairwise balances, validation, history filtering, monthly
-summaries) using the exact examples from the customer description. They need no Firebase.
+summaries, member-management helpers) using the exact examples from the customer description.
+They need no Firebase.
 
 Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firestore emulator):
 
@@ -70,8 +71,21 @@ Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firesto
 cd firestore-tests && npm install && npm test
 ```
 
-22 tests check NFR 4 on the server side: members-only access, owner-only group changes,
-creator-only edits, locked USC email/ID, unique USC IDs, and valid document contents.
+25 tests check NFR 4 on the server side: members-only access, owner-only group changes,
+creator-only edits, locked USC email/ID, unique USC IDs, valid document contents, and the
+leave / remove member / transfer ownership rules.
+
+### Running the whole app against local Firebase emulators (optional)
+
+Useful for testing without creating accounts in the shared Firebase project:
+
+```bash
+firebase emulators:start --only auth,firestore --project splitsmart-team04   # terminal 1
+./gradlew installDebug -Psplitsmart.emulatorHost=10.0.2.2                     # terminal 2, emulator running
+```
+
+`10.0.2.2` is how the Android emulator reaches your computer. Builds without the flag always use
+the real Firebase project.
 
 ## 4. Demo video script (what the TA grades)
 
@@ -93,7 +107,9 @@ be shown on another member's screen. Accounts can also be switched with *Profile
 | 11 | FR 2.7–2.9, 5.3 | Edit an expense (balances/history/summary update) and delete one with the confirmation dialog. As another member, Edit/Delete are hidden. Same for a settlement. |
 | 12 | FR 5.7 | Summary tab: pick a month; number of expenses, total, and per-category totals that add up; settlements excluded. |
 | 13 | NFR 1, 3 | Close and reopen the app: data is still there. Changes made on device A appear on device B after pull-to-refresh. |
-| 14 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up shortcut on balances, Share balances, month picker, dark mode. |
+| 14 | Live updates | With both devices on the same group, add an expense on device A: device B's History and Balances update **without** refreshing. Add someone to a group: it appears on their home screen immediately. |
+| 15 | Member management | As the owner, Members tab → ⋮ next to Carol → *Remove from group* while she still owes money → refused with the amount. As Bob (settled up), menu → *Leave group*. As the owner, ⋮ → *Make owner* on another member, then show the old owner now sees *Leave group* instead of Edit/Delete. Bob's old expenses still show his name. |
+| 16 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up shortcut on balances, Share balances, month picker, dark mode. |
 
 ## 5. How the code is organized
 
@@ -129,9 +145,8 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 
 ## 6. Ideas for improving it further
 
-* Real-time updates with Firestore snapshot listeners (not required, but nice in a demo).
-* Optional extensions from the spec: remove members, leave a group, transfer ownership
-  (the implementation document analyses the design impact).
+* Notifications when you are added to a group or an expense involves you (RC-12 in the
+  implementation document analyses the design impact).
 * UI tests with Espresso, and ViewModel tests with fake repositories.
 * A charts library for the monthly summary (charts are optional and not graded).
 
@@ -147,15 +162,15 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 ## 8. How this was built and verified
 
 The app was written with an AI assistant (Claude) from our 2.1 requirements and 2.2 design,
-as the assignment asks. In that environment Google's Maven repository and the Android SDK
-were not reachable, so the app could not be built or run on an emulator there. Instead:
+as the assignment asks. It has been verified as follows:
 
-* the business logic was compiled and tested for real (68 JUnit tests, all passing);
-* the whole app was compile-checked against the real Android 16 framework classes plus
-  signature-accurate stubs of the AndroidX / Material / Firebase APIs it uses, with zero
-  errors and warnings;
-* every resource reference in the layouts, menus, manifest and Java code was checked;
-* `firestore.rules` was tested against the real Firestore emulator (22 tests, all passing).
+* full Gradle build (`./gradlew assembleDebug`) with the real libraries;
+* 71 JUnit tests for the business logic, all passing;
+* `firestore.rules` tested against the real Firestore emulator (25 tests, all passing);
+* an end-to-end run on an Android 15 emulator against the local Firebase emulators, covering
+  every row of the demo script above, including live updates and member management.
 
-So the first full Gradle build and the first run on a device happen in Android Studio. If
-anything needs a tweak there, it should be small (for example a dependency version).
+**After pulling these changes, whoever owns the Firebase project must re-publish
+`firestore.rules`** (console → Firestore → Rules, or `firebase deploy --only firestore:rules`).
+Otherwise leaving a group, removing a member and transferring ownership fail with "You don't
+have permission to do that."

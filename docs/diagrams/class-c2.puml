@@ -40,6 +40,7 @@ package "viewmodel" {
   class GroupListViewModel <<changed>> {
     +loadGroups()
     +NEW(getGroups() : LiveData<List<GroupListItem>>)
+    +NEW(startLiveUpdates())
   }
   class GroupViewModel <<changed>> {
     +NEW(load(groupId))
@@ -47,6 +48,13 @@ package "viewmodel" {
     +NEW(updateGroup(name, description))
     +addMember(email)
     +NEW(deleteGroup() / isOwner())
+    +NEW(removeMember(uid) / leaveGroup())
+    +NEW(transferOwnership(newOwnerId))
+    +NEW(startLiveUpdates(groupId))
+    +NEW(getRemoteChange() / getLeftGroup())
+  }
+  class FormerMembers <<new>> {
+    ~{static} missingUserIds(transactions, knownIds)
   }
 
   class ExpenseViewModel <<changed>> {
@@ -117,5 +125,6 @@ GroupListViewModel ..> GroupListItem
 ExpenseViewModel ..> ParticipantRow
 ExpenseViewModel ..> SplitStatus
 SettlementViewModel ..> ReceiverOption
+HistoryViewModel ..> FormerMembers
 
 @enduml

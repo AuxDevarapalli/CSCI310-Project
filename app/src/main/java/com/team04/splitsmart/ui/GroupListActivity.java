@@ -79,6 +79,7 @@ public class GroupListActivity extends BaseActivity {
             }
         });
         observeMessages(viewModel);
+        viewModel.startLiveUpdates();
     }
 
     @Override

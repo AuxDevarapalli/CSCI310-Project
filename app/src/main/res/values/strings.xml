@@ -130,6 +130,21 @@
     <string name="members_owner_only">Only the group owner can add members.</string>
     <string name="message_member_added">Added %1$s to the group</string>
     <string name="badge_owner">Owner</string>
+    <string name="members_manage_hint">Tap ⋮ next to a member to make them the owner or remove them. Members can only be removed once they are settled up.</string>
+    <string name="action_member_options">Member options</string>
+    <string name="action_make_owner">Make owner</string>
+    <string name="action_remove_member">Remove from group</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_transfer">Transfer</string>
+    <string name="action_leave_group">Leave group</string>
+    <string name="action_leave">Leave</string>
+    <string name="confirm_remove_member_title">Remove %1$s?</string>
+    <string name="confirm_remove_member_message">%1$s will no longer see this group. Their past expenses and settlements stay in the history. They can only be removed if they are settled up with everyone.</string>
+    <string name="confirm_transfer_title">Make %1$s the owner?</string>
+    <string name="confirm_transfer_message">%1$s will be able to edit and delete the group and manage its members. You will stay a member but lose these permissions.</string>
+    <string name="confirm_leave_title">Leave \"%1$s\"?</string>
+    <string name="confirm_leave_message">You will no longer see this group. You can only leave once you are settled up with everyone in it.</string>
+    <string name="message_left_group">You left the group</string>
 
     <!-- Expense form (FR 2.x, FR 3.x) -->
     <string name="title_add_expense">Add expense</string>
