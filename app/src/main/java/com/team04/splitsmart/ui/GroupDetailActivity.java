@@ -79,6 +79,10 @@ public class GroupDetailActivity extends BaseActivity {
                 confirmDelete();
                 return true;
             }
+            if (id == R.id.action_leave_group) {
+                confirmLeave();
+                return true;
+            }
             return false;
         });
 
@@ -120,6 +124,19 @@ public class GroupDetailActivity extends BaseActivity {
                 finish();
             }
         });
+        viewModel.getLeftGroup().observe(this, event -> {
+            if (event.getContentIfNotHandled() != null) {
+                Toast.makeText(this, R.string.message_left_group, Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
+        // Live updates: another member's changes reload every tab automatically.
+        viewModel.getRemoteChange().observe(this, event -> {
+            if (event.getContentIfNotHandled() != null) {
+                refreshAll();
+            }
+        });
+        viewModel.startLiveUpdates(groupId);
         observeMessages(viewModel);
 
         if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_JUST_CREATED, false)) {
@@ -149,6 +166,17 @@ public class GroupDetailActivity extends BaseActivity {
         boolean owner = viewModel.isOwner();
         menu.findItem(R.id.action_edit_group).setVisible(owner);
         menu.findItem(R.id.action_delete_group).setVisible(owner);
+        menu.findItem(R.id.action_leave_group).setVisible(!owner);
+    }
+
+    private void confirmLeave() {
+        Group group = viewModel.getGroup().getValue();
+        String name = group == null ? "" : group.getName();
+        new ConfirmDialog(this,
+                getString(R.string.confirm_leave_title, name),
+                getString(R.string.confirm_leave_message),
+                getString(R.string.action_leave),
+                viewModel::leaveGroup).show();
     }
 
     private void confirmDelete() {

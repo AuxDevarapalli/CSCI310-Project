@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.team04.splitsmart.data.AuthRepository;
+import com.team04.splitsmart.data.FirebaseEmulators;
 import com.team04.splitsmart.viewmodel.AppContainer;
 
 /**
@@ -20,6 +21,9 @@ public class SplitSmartApp extends Application {
         super.onCreate();
         firebaseConfigured = AuthRepository.isFirebaseConfigured(this);
         if (firebaseConfigured) {
+            if (!BuildConfig.FIREBASE_EMULATOR_HOST.isEmpty()) {
+                FirebaseEmulators.connect(BuildConfig.FIREBASE_EMULATOR_HOST);
+            }
             container = AppContainer.createDefault();
         }
     }

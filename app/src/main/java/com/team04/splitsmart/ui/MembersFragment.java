@@ -8,6 +8,8 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -25,7 +27,8 @@ import java.util.List;
 
 /**
  * The group's member list, visible to every member (FR 1.6). The owner can add registered
- * users by their USC email (FR 1.5). Shares its {@link GroupViewModel} with the activity.
+ * users by their USC email (FR 1.5), and can also make another member the owner or remove a
+ * member who is settled up. Shares its {@link GroupViewModel} with the activity.
  */
 public class MembersFragment extends BaseFragment implements Refreshable {
     private static final String ARG_GROUP_ID = "groupId";
@@ -35,6 +38,7 @@ public class MembersFragment extends BaseFragment implements Refreshable {
     private SwipeRefreshLayout refreshLayout;
     private View addCard;
     private View ownerOnlyNote;
+    private TextView ownerOnlyNoteText;
     private TextView countTitle;
     private LinearLayout rows;
     private TextInputLayout emailLayout;
@@ -65,6 +69,7 @@ public class MembersFragment extends BaseFragment implements Refreshable {
         refreshLayout = view.findViewById(R.id.members_refresh);
         addCard = view.findViewById(R.id.members_add_card);
         ownerOnlyNote = view.findViewById(R.id.members_owner_only_note);
+        ownerOnlyNoteText = (TextView) ownerOnlyNote;
         countTitle = view.findViewById(R.id.members_count_title);
         rows = view.findViewById(R.id.members_rows);
         emailLayout = view.findViewById(R.id.members_email_layout);
@@ -120,7 +125,8 @@ public class MembersFragment extends BaseFragment implements Refreshable {
         }
         boolean owner = viewModel.isOwner();
         UiUtils.setVisible(addCard, owner);
-        UiUtils.setVisible(ownerOnlyNote, !owner);
+        ownerOnlyNoteText.setText(owner ? R.string.members_manage_hint : R.string.members_owner_only);
+        UiUtils.setVisible(ownerOnlyNote, !owner || group.getMemberCount() > 1);
         countTitle.setText(getResources().getQuantityString(R.plurals.member_count,
                 group.getMemberCount(), group.getMemberCount()));
     }
@@ -132,6 +138,7 @@ public class MembersFragment extends BaseFragment implements Refreshable {
         }
         Group group = viewModel.getGroup().getValue();
         String currentUid = viewModel.getCurrentUserId();
+        boolean owner = viewModel.isOwner();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (User member : members) {
             View row = inflater.inflate(R.layout.item_member, rows, false);
@@ -144,7 +151,38 @@ public class MembersFragment extends BaseFragment implements Refreshable {
                     ? getString(R.string.member_you, member.getName()) : member.getName());
             email.setText(member.getUscEmail());
             UiUtils.setVisible(ownerBadge, group != null && group.isOwner(member.getUid()));
+            View more = row.findViewById(R.id.member_more);
+            boolean manageable = owner && !member.getUid().equals(currentUid);
+            UiUtils.setVisible(more, manageable);
+            if (manageable) {
+                more.setOnClickListener(v -> showMemberOptions(member));
+            }
             rows.addView(row);
         }
+    }
+
+    /** Owner only: "Make owner" or "Remove from group" for another member. */
+    private void showMemberOptions(User member) {
+        String[] options = {getString(R.string.action_make_owner),
+                getString(R.string.action_remove_member)};
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(member.getName())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        new ConfirmDialog(requireContext(),
+                                getString(R.string.confirm_transfer_title, member.getName()),
+                                getString(R.string.confirm_transfer_message, member.getName()),
+                                getString(R.string.action_transfer),
+                                () -> viewModel.transferOwnership(member.getUid())).show();
+                    } else {
+                        new ConfirmDialog(requireContext(),
+                                getString(R.string.confirm_remove_member_title, member.getName()),
+                                getString(R.string.confirm_remove_member_message,
+                                        member.getName()),
+                                getString(R.string.action_remove),
+                                () -> viewModel.removeMember(member.getUid())).show();
+                    }
+                })
+                .show();
     }
 }

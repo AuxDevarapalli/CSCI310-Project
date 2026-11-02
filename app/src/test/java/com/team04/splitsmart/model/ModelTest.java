@@ -29,6 +29,19 @@ public class ModelTest {
     }
 
     @Test
+    public void groupCanLoseAMemberAndChangeOwner() {
+        Group group = new Group("g1", "Roommates", "", "alice",
+                Arrays.asList("alice", "bob", "carol"), 1);
+        Group without = group.withoutMember("bob");
+        assertEquals(Arrays.asList("alice", "carol"), without.getMemberIds());
+        assertTrue(group.isMember("bob"));
+        Group transferred = without.withOwner("carol");
+        assertTrue(transferred.isOwner("carol"));
+        assertFalse(transferred.isOwner("alice"));
+        assertTrue(transferred.isMember("alice"));
+    }
+
+    @Test
     public void settlementInvolvesPayerAndReceiver() {
         Settlement settlement = new Settlement("s1", "g1", "bob", "2026-09-17", 1, null,
                 "bob", "alice", 500);

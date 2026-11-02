@@ -8,7 +8,8 @@ rules_version = '2';
 //
 // Summary:
 //   * Only members can read a group and its transactions.
-//   * Only the owner can edit a group, add members, or delete it.
+//   * Only the owner can edit a group, add or remove members, transfer ownership, or delete
+//     it. Any other member may leave (remove only themselves).
 //   * Only a transaction's creator can edit or delete it (the owner may also delete
 //     transactions so that deleting a group removes everything in it, FR 1.7).
 //   * The USC email and USC ID can never change after registration (FR 1.3), and each
@@ -74,11 +75,27 @@ service cloud.firestore {
         && request.resource.data.memberIds == [request.auth.uid]
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0;
-      // Owner-only edits (FR 1.5, FR 1.7). Ownership cannot change and the owner stays a member.
+      // Owner edits (FR 1.5, FR 1.7): change details, add or remove members while staying a
+      // member, or hand ownership to an existing member (changing nothing else).
+      function isOwnerEdit() {
+        return resource.data.ownerId == request.auth.uid
+          && ((request.resource.data.ownerId == resource.data.ownerId
+                && request.auth.uid in request.resource.data.memberIds)
+              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerId'])
+                && request.resource.data.ownerId in resource.data.memberIds));
+      }
+
+      // A member who is not the owner may remove themselves, and nothing else.
+      function isLeaving() {
+        return resource.data.ownerId != request.auth.uid
+          && request.auth.uid in resource.data.memberIds
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+          && request.resource.data.memberIds.toSet()
+               == resource.data.memberIds.toSet().difference([request.auth.uid].toSet());
+      }
+
       allow update: if signedIn()
-        && resource.data.ownerId == request.auth.uid
-        && request.resource.data.ownerId == resource.data.ownerId
-        && request.auth.uid in request.resource.data.memberIds
+        && (isOwnerEdit() || isLeaving())
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0;
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;

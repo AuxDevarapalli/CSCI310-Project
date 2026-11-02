@@ -73,6 +73,7 @@ to find:
 |---|---|---|
 | 1.0 | October 2026 | Project 2.2 design document (architecture and detailed design). |
 | 2.0 | October 2026 | Project 2.3 implementation: all features implemented; this document records the design and requirement changes. |
+| 3.0 | October 2026 | Optional extensions implemented: remove a member, leave a group, transfer ownership (RC-10), and live updates (RC-11). Changes AC-5, AC-6 and DC-9; Figures 9 and 10. |
 
 As in our earlier documents, whole version numbers mark completed features and decimal numbers
 mark smaller changes to existing ones.
@@ -107,6 +108,10 @@ The changes we did make fall into four groups:
    different names in the 2.2 class and sequence diagrams (DC-3 to DC-6).
 4. **Requirement clarifications** discovered while building the forms, such as password length,
    an upper limit on amounts, and how percentage rounding treats 0% participants (Section 6).
+5. **Optional extensions from the customer description**, which we analysed in the first version
+   of this document and then implemented: the owner can remove a member or transfer ownership,
+   any other member can leave, nobody can leave while they still owe or are owed money (AC-6,
+   DC-9), and every screen updates live when another member changes the group (AC-5).
 
 Section 4 describes the architectural changes and shows the revised block diagram. Section 5
 describes the detailed design changes, with the revised class table, class diagrams, data storage
@@ -121,11 +126,11 @@ list the extra features we added, and summarize how the implementation was verif
 | Component | Responsibility | Status | Change |
 |---|---|---|---|
 | C1 UI Views | Display screens, collect input, show errors and confirmations | <span class="tag chg">CHANGED</span> | Shared base classes; tabbed group screen with a Members tab (DC-1) |
-| C2 ViewModels | Hold screen state; coordinate business logic and data access | <span class="tag chg">CHANGED</span> | One-time events and form-state classes (DC-3) |
+| C2 ViewModels | Hold screen state; coordinate business logic and data access | <span class="tag chg">CHANGED</span> | One-time events and form-state classes (DC-3); own the live-update subscriptions (AC-5) |
 | C3 Business Logic and Model | Validation, money, splits, balances, history filters, summaries | <span class="tag same">UNCHANGED</span> | Responsibilities unchanged; some signatures refined (DC-4, DC-5) |
-| C4 Repositories | Read and write users, groups and transactions through Firebase | <span class="tag chg">CHANGED</span> | Error translation boundary (AC-2); registration flow (AC-3) |
+| C4 Repositories | Read and write users, groups and transactions through Firebase | <span class="tag chg">CHANGED</span> | Error translation boundary (AC-2); registration flow (AC-3); snapshot listeners for live updates (AC-5) |
 | C5 Firebase Authentication | Registration, login, logout, sessions | <span class="tag same">UNCHANGED</span> | — |
-| C6 Cloud Firestore | Shared storage and server-side access rules | <span class="tag chg">CHANGED</span> | Rules also validate contents; owner may delete a group's transactions (AC-4) |
+| C6 Cloud Firestore | Shared storage and server-side access rules | <span class="tag chg">CHANGED</span> | Rules also validate contents; owner may delete a group's transactions (AC-4); leave, remove and transfer-ownership rules (AC-6); pushes changes to listening phones (AC-5) |
 | Application (`SplitSmartApp`) | Builds the shared dependencies once per process | <span class="tag new">NEW</span> | Composition root (AC-1) |
 
 ## 4.2 Revised block diagram
@@ -138,7 +143,8 @@ list the extra features we added, and summarize how the implementation was verif
 The dependency rules from Project 2.2 are unchanged: views talk only to ViewModels; ViewModels use
 the business-logic engines and the repositories; only repositories reach Firebase. Every phone
 reads and writes the same Firestore database, so one member's changes reach the others when a
-screen is refreshed or reopened (NFR 3).
+screen is refreshed or reopened (NFR 3). In addition, open screens now receive other members'
+changes immediately through Firestore snapshot listeners (AC-5, the dotted arrow in Figure 1).
 
 ## 4.3 Changes and rationale
 
@@ -187,11 +193,38 @@ exists" instead of a permission error).
 group together with all of its expenses and settlements, but the 2.2 rule "only a transaction's
 creator can delete it" would have made a group containing other members' expenses impossible to
 delete. The app never offers the owner a way to delete someone else's individual transaction, so
-FR 2.7 is still respected in the UI. The rules are covered by 22 automated tests (Appendix C).
+FR 2.7 is still respected in the UI. The rules are covered by 25 automated tests (Appendix C).
+
+**AC-5 <span class="tag new">NEW</span> Live updates through snapshot listeners.**
+*What changed:* `GroupRepository` and `TransactionRepository` offer `observe…` methods that
+register Firestore snapshot listeners and return a `Subscription`. `GroupViewModel` watches the
+open group and its transactions; `GroupListViewModel` watches the user's groups. When another
+phone changes something, the ViewModel fires an event and the screen reloads its tabs through the
+same code path as pull-to-refresh. The first snapshot and the phone's own unsaved writes are
+ignored. Subscriptions are removed in `onCleared()`. Figure 10 shows the flow.
+*Rationale:* NFR 3 only requires changes to appear "after they refresh or reopen", but in a
+shared-expense app a member who is looking at the balances should see a new expense immediately.
+This was planned as RC-11 in version 2.0. Keeping Firebase's `ListenerRegistration` inside the
+`Subscription` wrapper preserves the rule that only repositories touch Firebase. Reusing the
+existing reload code means the C3 engines and the screen rendering did not change.
+
+**AC-6 <span class="tag chg">CHANGED</span> Group membership can shrink and ownership can move.**
+*What changed:* The 2.2 rules fixed the owner forever and only ever added members. The rules now
+allow (a) the owner to remove other members while staying a member, (b) the owner to make an
+existing member the owner, changing nothing else in the same write, and (c) any other member to
+remove themselves and nothing else. The ViewModel first checks that the person leaving is settled
+up with everyone (Figure 9).
+*Rationale:* These are the optional extensions in the customer description (RC-10). The server
+cannot sum a group's transactions inside a security rule, so the "settled up" check is done in
+`GroupViewModel` against freshly loaded transactions, and the rules guarantee the structural
+safety properties: a group always has an owner who is a member, and a member can never remove
+anyone except themselves. Old transactions keep the former member's id, so balances and history
+stay correct.
 
 **Unchanged architectural decisions.** MVVM; repositories as the only Firebase users;
 `DataCallback`-based asynchronous repository calls; integer cents everywhere (NFR 2); balances
-computed from transactions on every load rather than stored; one shared Firestore database.
+computed from transactions on every load rather than stored (live updates trigger the same
+recomputation rather than storing balances); one shared Firestore database.
 
 # 5. Detailed Design Change
 
@@ -204,13 +237,13 @@ all others existed and keep their 2.2 names.
 |---|---|---|
 | Application | (root) | `SplitSmartApp` <span class="tag new">NEW</span> |
 | C1 UI Views | `.ui` | `LoginActivity`, `RegisterActivity`, `GroupListActivity`, `ProfileActivity`, `GroupFormActivity`, `GroupDetailActivity`, `HistoryFragment`, `BalanceFragment`, `SummaryFragment`, `ExpenseFormActivity`, `SettlementFormActivity`, `TransactionDetailActivity`, `ConfirmDialog`; `BaseActivity` <span class="tag new">NEW</span>, `BaseFragment` <span class="tag new">NEW</span>, `MembersFragment` <span class="tag new">NEW</span>, `GroupPagerAdapter` <span class="tag new">NEW</span>, `GroupAdapter` <span class="tag new">NEW</span>, `TransactionAdapter` <span class="tag new">NEW</span>, `Refreshable` <span class="tag new">NEW</span>, `SimpleTextWatcher` <span class="tag new">NEW</span>, `UiUtils` <span class="tag new">NEW</span> |
-| C2 ViewModels | `.viewmodel` | `BaseViewModel`, `AuthViewModel`, `ProfileViewModel`, `GroupListViewModel`, `GroupViewModel`, `ExpenseViewModel`, `SettlementViewModel`, `TransactionDetailViewModel`, `BalanceViewModel`, `HistoryViewModel`, `SummaryViewModel`, `ViewModelFactory`, `AppContainer`; `Event` <span class="tag new">NEW</span>, `GroupListItem` <span class="tag new">NEW</span>, `ParticipantRow` <span class="tag new">NEW</span>, `SplitStatus` <span class="tag new">NEW</span>, `ReceiverOption` <span class="tag new">NEW</span> |
+| C2 ViewModels | `.viewmodel` | `BaseViewModel`, `AuthViewModel`, `ProfileViewModel`, `GroupListViewModel`, `GroupViewModel`, `ExpenseViewModel`, `SettlementViewModel`, `TransactionDetailViewModel`, `BalanceViewModel`, `HistoryViewModel`, `SummaryViewModel`, `ViewModelFactory`, `AppContainer`; `Event` <span class="tag new">NEW</span>, `GroupListItem` <span class="tag new">NEW</span>, `ParticipantRow` <span class="tag new">NEW</span>, `SplitStatus` <span class="tag new">NEW</span>, `ReceiverOption` <span class="tag new">NEW</span>, `FormerMembers` <span class="tag new">NEW</span> |
 | C3 Validation and formatting | `.logic.validation` | `InputValidator`, `ValidationResult`, `Money`, `InvalidAmountException`, `DateProvider` |
 | C3 Split engine | `.logic.split` | `SplitCalculator` |
 | C3 Balance engine | `.logic.balance` | `BalanceCalculator`, `BalanceSummary`, `PairBalance` |
 | C3 History and summary engine | `.logic.history` | `HistoryFilter`, `HistoryQuery`, `SortOrder`, `SummaryCalculator`, `MonthlySummary` |
 | C3 Domain model | `.model` | `User`, `Group`, `Transaction`, `Expense`, `Settlement`, `Share`, `Category`, `SplitMethod`, `TransactionType` |
-| C4 Repositories | `.data` | `AuthRepository`, `UserRepository`, `GroupRepository`, `TransactionRepository`, `DataCallback`; `FirestoreMapper` <span class="tag new">NEW</span>, `FirebaseErrors` <span class="tag new">NEW</span>, `RepositoryException` <span class="tag new">NEW</span> |
+| C4 Repositories | `.data` | `AuthRepository`, `UserRepository`, `GroupRepository`, `TransactionRepository`, `DataCallback`; `FirestoreMapper` <span class="tag new">NEW</span>, `FirebaseErrors` <span class="tag new">NEW</span>, `RepositoryException` <span class="tag new">NEW</span>, `Subscription` <span class="tag new">NEW</span>, `FirebaseEmulators` <span class="tag new">NEW</span> |
 | C5 | Firebase SDK | `FirebaseAuth`, used only inside `AuthRepository` |
 | C6 | Firebase SDK | `FirebaseFirestore`, `DocumentSnapshot`, used only inside `.data`; schema in 5.4, rules in 5.5 |
 
@@ -285,8 +318,8 @@ members it needs. This also means a form opened after the process was restarted 
 | `BaseViewModel` | `error : LiveData<String>`, `clearError()` | `loading`, `error : LiveData<Event<String>>`, `info`, `fieldError : LiveData<ValidationResult>`, `clearError()` | A plain `LiveData<String>` re-delivers the last message after a rotation; `Event` shows it once. `fieldError` lets a form put the message under the right input. |
 | `AuthViewModel` | `register(..)`, `login(email, password)` | `register(name, email, uscId, password, confirmPassword)`, `login(..)`, `isLoggedIn()` | Password confirmation (RC-1); returning users skip the login screen. |
 | `ProfileViewModel` | `updateName(name)` | + `loadProfile()`, `logout()` | Logging out (FR 1.3) lives on the profile screen. |
-| `GroupListViewModel` | `loadGroups()` | `loadGroups()` producing `GroupListItem`s | Each row also shows the user's totals in that group (extra feature). |
-| `GroupViewModel` | `createGroup(..)`, `addMember(email)` | + `load(groupId)`, `updateGroup(..)`, `deleteGroup()`, `isOwner()`, `getGroupGone()` | FR 1.6 and FR 1.7 needed load, edit and delete; `groupGone` closes the screen if the group was deleted elsewhere (AC-2). |
+| `GroupListViewModel` | `loadGroups()` | `loadGroups()` producing `GroupListItem`s; + `startLiveUpdates()` | Each row also shows the user's totals in that group (extra feature); the list reloads when the user is added to or removed from a group elsewhere (AC-5). |
+| `GroupViewModel` | `createGroup(..)`, `addMember(email)` | + `load(groupId)`, `updateGroup(..)`, `deleteGroup()`, `isOwner()`, `getGroupGone()`; + `removeMember(uid)`, `leaveGroup()`, `transferOwnership(uid)`, `getLeftGroup()`, `startLiveUpdates(groupId)`, `getRemoteChange()` | FR 1.6 and FR 1.7 needed load, edit and delete; `groupGone` closes the screen if the group was deleted elsewhere or the user was removed (AC-2). Member management and live updates: DC-9, AC-5. Now also receives `TransactionRepository` and `BalanceCalculator` for the settled-up check. |
 | `ExpenseViewModel` | `init(group, null)` + setters, `recomputePreview()`, `save(title, category, note)` | `init(groupId, expenseId)`; same setters (`toggleParticipant` takes the checked state); + `selectAllParticipants()`, `fillEvenly()`; preview published as `ParticipantRow`s and a `SplitStatus` | DC-2; one ViewModel serves both create and edit (FR 2.7); helpers for the split inputs (extra). |
 | `SettlementViewModel` | `createSettlement(..)` (class diagram); `selectReceiver`, `save` (Figure 6) | `init(groupId, settlementId, receiverId)`, `selectReceiver(uid)`, `save(amountText, note)` | One ViewModel for create and edit (FR 5.3); the receiver can be preselected from the balance page. |
 | `TransactionDetailViewModel` | `editTransaction(..)`, `deleteTransaction(id)` | `load(groupId, transactionId)`, `canEdit()`, `deleteTransaction()` | Editing happens in the two form ViewModels; the detail screen only decides whether Edit and Delete are shown (FR 2.7, FR 5.3). |
@@ -294,6 +327,7 @@ members it needs. This also means a form opened after the process was restarted 
 | `SummaryViewModel` | `loadMonth(month)` | `load(groupId)`, `loadMonth(month)`, `previousMonth()`, `nextMonth()` | The transactions must be loaded before any month can be summarised; arrows step between months. |
 | `AppContainer` | holds repositories | + `createDefault()` | Called by `SplitSmartApp` (AC-1). |
 | `Event`, `GroupListItem`, `ParticipantRow`, `SplitStatus`, `ReceiverOption` | — | <span class="tag new">NEW</span> small immutable state classes | Give each screen exactly the data it renders, so Activities contain no business logic. |
+| `FormerMembers` | — | <span class="tag new">NEW</span> `missingUserIds(transactions, knownIds)` | `HistoryViewModel` and `TransactionDetailViewModel` load the names of people who appear in old transactions but have left the group (DC-9). |
 
 **DC-4 <span class="tag chg">CHANGED</span> Business logic (C3).**
 
@@ -312,7 +346,8 @@ members it needs. This also means a form opened after the process was restarted 
 **DC-5 <span class="tag chg">CHANGED</span> Domain model (C3).** `Transaction` gains `groupId`
 (so a repository knows where to write) and the fields that were already in the 2.2 Firestore
 schema but missing from the class diagram (`date`, `createdAt`, `note`), plus `involves(uid)` and
-`isCreatedBy(uid)` used by the member filter and permission checks. `PairBalance` holds the other
+`isCreatedBy(uid)` used by the member filter and permission checks. `Group` gains
+`withMember`, `withoutMember` and `withOwner` (DC-9). `PairBalance` holds the other
 `User` instead of only an id, because the balance page shows names and initials. All model
 classes are immutable; editing creates a new object with the same id, creator, date and creation
 time, which keeps the automatically recorded date fixed (FR 2.4).
@@ -330,6 +365,9 @@ time, which keeps the automatically recorded date fixed (FR 2.4).
 | `FirebaseErrors`, `RepositoryException` | — | <span class="tag new">NEW</span> | AC-2. |
 | Group deletion | "removes the transactions in the same batch" | Transactions are deleted in batches of at most 450 writes and the group document goes in the last batch | Firestore limits a batch to 500 writes; deleting the group last keeps the owner's permission to delete the remaining transactions (AC-4). |
 | Group list query | not specified | `memberIds array-contains uid`, sorted in the app | No composite index has to be created in the Firebase console. |
+| `GroupRepository` membership | — | <span class="tag new">NEW</span> `removeMember(groupId, uid, cb)` (`arrayRemove`), `transferOwnership(groupId, newOwnerId, cb)` | DC-9, AC-6. |
+| Live updates | — | <span class="tag new">NEW</span> `GroupRepository.observeGroup`, `observeGroupsForUser`, `TransactionRepository.observeTransactions`, each returning a `Subscription` | AC-5. |
+| `FirebaseEmulators` | — | <span class="tag new">NEW</span> `connect(host)`, used only when the app is built with `-Psplitsmart.emulatorHost=…` | Lets the team test the whole app against the local Firebase emulators without touching the shared project. Normal builds are unaffected. |
 
 **DC-7 <span class="tag chg">CHANGED</span> Settlement limit is checked at save time.** In 2.2
 (Figure 6) the amount owed was computed when the receiver was chosen and used later to validate
@@ -344,6 +382,17 @@ are compared with `if` statements because the Android build tools no longer make
 constants; and the participant rows of the expense form opt out of Android's automatic view-state
 saving because they share view ids — the ViewModel already keeps each member's input across a
 screen rotation.
+
+**DC-9 <span class="tag new">NEW</span> Member management (optional extensions, RC-10).**
+
+| Where | What | Why |
+|---|---|---|
+| Members tab (owner) | A ⋮ button on every other member opens **Make owner** / **Remove from group**, each with a confirmation dialog | Owner-only actions are offered only to the owner, as for FR 1.5 and FR 1.7. |
+| Group menu (other members) | **Leave group**, with a confirmation dialog | The owner must transfer ownership first, so a group always has an owner. |
+| `GroupViewModel.removeMember` / `leaveGroup` | Reloads the transactions and uses `BalanceCalculator.computeTotals`; refuses with "… still owes or is owed $X in this group. Settle up first." unless both totals are zero | No debt can disappear when someone leaves, so the balance rules of FR 4 stay correct for everyone who remains. |
+| History and Details | Names of former members are loaded from `users/{uid}` (`FormerMembers`) | A removed member's old expenses must still say who paid (FR 5.4, FR 5.5) instead of "Unknown user". |
+| Expense and settlement forms | Editing a transaction that involves a former member shows "This expense involves someone who has left the group, so it can no longer be edited."; deleting it is still allowed | The rules require every participant to be a current member (AC-4), so such an edit would be rejected by the server anyway. |
+| `GroupRepository.getGroup` | Losing read access is reported as "You are no longer a member of this group." | A removed member's open group screen closes with a clear message (together with AC-5 this happens immediately). |
 
 <div class="keep" markdown="1">
 
@@ -372,7 +421,7 @@ of maps; with a plain list the rules can check that every participant is a membe
 |---|---|---|
 | Groups: read | members only | members only; reading a group that no longer exists is allowed (AC-4) |
 | Groups: create | — | the creator must be the owner and the only member; a name is required |
-| Groups: change | owner only | owner only; the owner cannot be changed or removed |
+| Groups: change | owner only | owner: edit details and add or remove members while staying a member, or transfer ownership to an existing member (nothing else in that write); any other member: remove only themselves (AC-6) |
 | Groups: delete | owner only | owner only |
 | Transactions: read | members only | members only |
 | Transactions: create | — | members only; `creatorId` is the caller; expense and settlement contents are checked (AC-4) |
@@ -393,6 +442,8 @@ of maps; with a plain list the rules can check that every participant is a membe
 | 6 | Record a settlement | <span class="tag chg">CHANGED</span> | Data loaded once in `init`; `amountOwed`; fresh re-check at save time (DC-7). |
 | 7 | Search, filter and sort the history | <span class="tag chg">CHANGED</span> | Members loaded for names and the member filter; `clearFilters()`; result count. |
 | 8 | Delete a group | <span class="tag new">NEW</span> | Batched deletion and the owner-delete rule (AC-4, DC-6). |
+| 9 | Remove a member or leave a group | <span class="tag new">NEW</span> | Settled-up check, then `arrayRemove`; new rules (AC-6, DC-9). |
+| 10 | Live updates | <span class="tag new">NEW</span> | Snapshot listener, change event, reload of every tab (AC-5). |
 
 </div>
 
@@ -420,12 +471,20 @@ of maps; with a plain list the rules can check that every participant is a membe
 ![Figure 8](diagrams/seq-delete-group.svg)
 </div>
 
+<div class="figure landscape" markdown="1">
+![Figure 9](diagrams/seq-member-management.svg)
+</div>
+
+<div class="figure landscape" markdown="1">
+![Figure 10](diagrams/seq-live-updates.svg)
+</div>
+
 # 6. Requirements Change
 
 No requirement from Project 2.1 was removed or postponed: FR 1.1 – FR 5.7 and NFR 1 – NFR 4 are
 all implemented (see Appendix A). The changes below clarify requirements that turned out to be
-underspecified when the forms were built (RC-1 to RC-9), followed by requirements we analysed for
-possible later assignments (RC-10 to RC-12).
+underspecified when the forms were built (RC-1 to RC-9), followed by optional requirements that we
+added and implemented (RC-10, RC-11) and one we analysed for a later assignment (RC-12).
 
 **RC-1 Password rules (FR 1.1).** Passwords must have at least 6 characters, and registration asks
 for the password twice.
@@ -482,22 +541,27 @@ always the logged-in user, and the server rejects a settlement recorded on someo
 *Does it change the design?* No change to classes (it matches the 2.2 design); the rule is now
 also enforced on the server (AC-4).
 
-**RC-10 (future) Remove members, leave a group, transfer ownership.** These are optional
-extensions in the customer description and were not implemented.
-*Does it change the design?* Yes. `GroupRepository` would need `removeMember` and
-`transferOwnership`; `GroupViewModel` would need matching actions that first use
-`BalanceCalculator` to require a zero balance with every other member, so that no debt disappears;
-the security rules would have to allow the owner to remove others, a member to remove only
-themselves, and the owner to change `ownerId` to an existing member. Because old transactions may
-reference a removed user, `HistoryViewModel` and `TransactionDetailViewModel` would load users
-referenced by transactions rather than only current members (`UserRepository.getUsers` already
-shows "Unknown user" for missing profiles).
+**RC-10 (added, implemented) Remove members, leave a group, transfer ownership.** These were
+optional extensions in the customer description. The owner may remove a member or make another
+member the owner; any other member may leave. Nobody can leave or be removed while they still owe
+or are owed money in the group, and the owner must transfer ownership before leaving.
+*Does it change the design?* Yes, as predicted in version 2.0 of this document, and it was
+implemented that way: `GroupRepository` gained `removeMember` and `transferOwnership`;
+`GroupViewModel` gained `removeMember`, `leaveGroup` and `transferOwnership`, which use
+`BalanceCalculator` to require a zero balance; the security rules allow exactly these three
+changes (AC-6); and history and detail screens load the names of users referenced by old
+transactions (`FormerMembers`). One consequence we had not predicted: an expense or settlement
+that involves a former member can no longer be edited (only deleted), because the rules require
+every participant to be a current member (DC-9).
 
-**RC-11 (future) Real-time updates.** Not required ("after they refresh or reopen"), but useful.
-*Does it change the design?* Yes, in C2 and C4 only: repositories would offer
-`observeTransactions(groupId, callback)` using Firestore snapshot listeners and return a handle;
-ViewModels would keep the handle and remove the listener in `onCleared()`. The C3 engines and the
-UI would not change, because they already react to LiveData updates.
+**RC-11 (added, implemented) Live updates.** Open screens show other members' changes immediately,
+without pulling to refresh. NFR 3 is still met in the original way as well (screens reload when
+shown, and pull to refresh still works).
+*Does it change the design?* Yes, in C2 and C4 only, as predicted: repositories offer
+`observeGroup`, `observeGroupsForUser` and `observeTransactions` using Firestore snapshot listeners
+and return a `Subscription` handle; ViewModels keep the handles and remove them in `onCleared()`
+(AC-5). The C3 engines and the screens' rendering code did not change; the screens reuse their
+refresh method.
 
 **RC-12 (future) Notifications** when a user is added to a group or an expense involves them.
 *Does it change the design?* Yes: a new backend component (Firebase Cloud Messaging plus a Cloud
@@ -526,7 +590,9 @@ notification permission request in C1. The existing components would otherwise b
 | FR 5.7 | Summary tab | `SummaryFragment`, `SummaryViewModel`, `SummaryCalculator` | `SummaryCalculatorTest` |
 | NFR 1 | All data | Cloud Firestore (with its local cache) | Close and reopen the app |
 | NFR 2 | All amounts | `Money` (`long` cents, "$0.00" format) | `MoneyTest` |
-| NFR 3 | All screens | Screens reload when shown; pull to refresh | Two devices |
+| NFR 3 | All screens | Screens reload when shown; pull to refresh; live updates (AC-5) | Two devices; emulator test with remote writes |
+| RC-10 (extension) | Members tab, group menu | `GroupViewModel.removeMember / leaveGroup / transferOwnership`, `GroupRepository` | rules tests (leave, remove, transfer); emulator end-to-end test |
+| RC-11 (extension) | Group list, every group tab | `Subscription`, `observe…` methods, `GroupViewModel.startLiveUpdates` | emulator end-to-end test |
 | NFR 4 | Server | Firebase Authentication (hashed passwords), `firestore.rules` | 22 rules tests |
 
 </div>
@@ -549,12 +615,17 @@ These go beyond the required features and do not replace any of them.
 9. **Offline viewing** of previously loaded data through Firestore's local cache.
 10. **Clear handling of deleted data:** if a group or transaction was deleted on another phone,
     the screen says so instead of showing an error, and a deleted group's page closes itself.
+11. **Member management** (optional extension, RC-10): remove a member, leave a group, transfer
+    ownership, with a guard that nobody leaves while money is still owed.
+12. **Live updates** (RC-11): the group list, history, balances, summary and members update the
+    moment another member makes a change, and a removed member's screen closes immediately.
 
 # Appendix C — Verification
 
 | Check | Scope | Result |
 |---|---|---|
-| Unit tests (`./gradlew test`) | `Money`, `SplitCalculator`, `BalanceCalculator`, `InputValidator`, `HistoryFilter`, `SummaryCalculator`, `DateProvider`, model — including every worked example in the customer description | 68 tests, all passing |
-| Security-rule tests (`firestore-tests/`, Firestore emulator) | Documents shaped exactly like the app writes them; members-only access, owner and creator permissions, locked fields, USC ID uniqueness, content validation, batched group deletion | 22 tests, all passing |
-| Compile check | Whole app against the Android 16 framework with all resource references resolved | No errors or warnings |
+| Unit tests (`./gradlew test`) | `Money`, `SplitCalculator`, `BalanceCalculator`, `InputValidator`, `HistoryFilter`, `SummaryCalculator`, `DateProvider`, model — including every worked example in the customer description | 71 tests, all passing |
+| Security-rule tests (`firestore-tests/`, Firestore emulator) | Documents shaped exactly like the app writes them; members-only access, owner and creator permissions, locked fields, USC ID uniqueness, content validation, batched group deletion | 25 tests, all passing (including leave, remove and transfer ownership) |
+| Full Gradle build | `./gradlew assembleDebug` with the real AndroidX, Material and Firebase libraries | Builds with no errors |
+| End-to-end test on an emulator | Android 15 emulator against the local Firebase Auth and Firestore emulators: registration (with every error case), login, profile, groups, members, equal and percentage splits with rounding, balances, settlements and their limits, history search, summary, remove / leave / transfer ownership, group deletion; live updates checked by writing to the database from outside the app | All passed |
 | Manual end-to-end test | The step-by-step script in `README.md` (section 4), using two devices to show that one member's changes reach the others | Carried out while recording the demo video |
