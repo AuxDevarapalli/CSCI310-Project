@@ -213,6 +213,12 @@ public class ExpenseViewModel extends BaseViewModel {
                             fail("Only the person who created this expense can edit it.");
                             return;
                         }
+                        if (!group.getMemberIds().containsAll(
+                                transaction.getInvolvedUserIds())) {
+                            fail("This expense involves someone who has left the group, "
+                                    + "so it can no longer be edited.");
+                            return;
+                        }
                         setUpExistingExpense((Expense) transaction);
                     }
 

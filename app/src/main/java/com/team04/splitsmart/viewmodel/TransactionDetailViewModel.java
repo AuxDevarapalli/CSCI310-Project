@@ -13,6 +13,7 @@ import com.team04.splitsmart.model.Group;
 import com.team04.splitsmart.model.Transaction;
 import com.team04.splitsmart.model.User;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,9 +114,30 @@ public class TransactionDetailViewModel extends BaseViewModel {
                 new DataCallback<Transaction>() {
                     @Override
                     public void onSuccess(Transaction loaded) {
-                        loading.setValue(false);
-                        loadError.setValue(null);
-                        transaction.setValue(loaded);
+                        Map<String, User> known = users.getValue() == null
+                                ? new HashMap<>() : new HashMap<>(users.getValue());
+                        List<String> missing = FormerMembers.missingUserIds(
+                                Collections.singletonList(loaded), known.keySet());
+                        if (missing.isEmpty()) {
+                            show(loaded);
+                            return;
+                        }
+                        // Someone in this transaction has left the group: load their name too.
+                        userRepository.getUsers(missing, new DataCallback<List<User>>() {
+                            @Override
+                            public void onSuccess(List<User> former) {
+                                for (User user : former) {
+                                    known.put(user.getUid(), user);
+                                }
+                                users.setValue(known);
+                                show(loaded);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                show(loaded);
+                            }
+                        });
                     }
 
                     @Override
@@ -123,6 +145,12 @@ public class TransactionDetailViewModel extends BaseViewModel {
                         fail(e.getMessage());
                     }
                 });
+    }
+
+    private void show(Transaction loaded) {
+        loading.setValue(false);
+        loadError.setValue(null);
+        transaction.setValue(loaded);
     }
 
     private void fail(String message) {

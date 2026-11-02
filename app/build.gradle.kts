@@ -22,6 +22,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Normally empty, so the app uses the real Firebase project. For local testing, build with
+        // -Psplitsmart.emulatorHost=10.0.2.2 to use the Auth and Firestore emulators instead.
+        val emulatorHost = (project.findProperty("splitsmart.emulatorHost") as String?) ?: ""
+        buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$emulatorHost\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
