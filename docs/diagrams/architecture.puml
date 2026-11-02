@@ -12,19 +12,19 @@ rectangle "SplitSmart Android Application" as appbox {
   rectangle "<<new>>\nSplitSmartApp\n(Application: composition root,\ndetects missing Firebase config)" as APP #D9F2DE
   rectangle "Presentation Layer" as pres #FAFAFA {
     rectangle "C1: UI Views\nActivities, tab Fragments, adapters\n<<changed>> + BaseActivity / BaseFragment,\nMembersFragment, GroupPagerAdapter" as C1 #FFE7C2
-    rectangle "C2: ViewModels\nViewModelFactory, AppContainer\n<<changed>> + Event and form-state classes" as C2 #FFE7C2
+    rectangle "C2: ViewModels\nViewModelFactory, AppContainer\n<<changed>> + Event and form-state classes;\nown live-update subscriptions" as C2 #FFE7C2
   }
   rectangle "Business Logic Layer" as biz #FAFAFA {
     rectangle "C3: Business Logic and Model\nvalidation · split · balance · history · model\n(pure Java, unit tested)" as C3
   }
   rectangle "Data Access Layer" as dal #FAFAFA {
-    rectangle "C4: Repositories\nAuth / User / Group / Transaction\n<<changed>> + FirestoreMapper,\nFirebaseErrors → RepositoryException" as C4 #FFE7C2
+    rectangle "C4: Repositories\nAuth / User / Group / Transaction\n<<changed>> + FirestoreMapper,\nFirebaseErrors → RepositoryException,\nSubscription (live snapshot listeners)" as C4 #FFE7C2
   }
 }
 
 rectangle "Firebase Backend" as fb {
   rectangle "C5: Firebase Authentication\n(email + password, hashed)" as C5
-  rectangle "C6: Cloud Firestore\n<<changed>> security rules also\nvalidate document contents" as C6 #FFE7C2
+  rectangle "C6: Cloud Firestore\n<<changed>> security rules also\nvalidate document contents and\nallow leave / remove / transfer owner" as C6 #FFE7C2
 }
 
 APP -down-> C2 : builds AppContainer once
@@ -32,7 +32,8 @@ C1 -down-> C2 : observes LiveData,\nforwards input
 C2 -down-> C3 : validate, split,\nbalances, filters
 C2 -down-> C4 : DataCallback<T>
 C4 -down-> C5
-C4 -down-> C6
+C4 -down-> C6 : get / set / update
+C6 .up.> C4 : <<new>> snapshot listeners\n(changes from other phones)
 
 legend bottom right
   White = unchanged from the 2.2 design
