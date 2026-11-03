@@ -25,6 +25,7 @@ package "logic.validation" {
     +NEW(validateGroup(name, description))
     +validateExpense(expense, group)
     +validateSettlement(amountCents, owedCents)
+    +NEW(validateSettlement(amountCents, owedCents, receivedByUser))
     +NEW(validateNote(note))
     +{static} NEW(normalizeEmail(email) : String)
   }
