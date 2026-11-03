@@ -46,6 +46,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
     private Chip categoryChip;
     private Chip memberChip;
     private Chip sortChip;
+    private Chip matchCaseChip;
     private TextView countText;
     private MaterialButton clearFiltersButton;
     private View emptyView;
@@ -83,6 +84,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         categoryChip = view.findViewById(R.id.chip_category);
         memberChip = view.findViewById(R.id.chip_member);
         sortChip = view.findViewById(R.id.chip_sort);
+        matchCaseChip = view.findViewById(R.id.chip_match_case);
         countText = view.findViewById(R.id.history_count);
         clearFiltersButton = view.findViewById(R.id.history_clear_filters);
         emptyView = view.findViewById(R.id.history_empty);
@@ -129,6 +131,11 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         memberChip.setOnClickListener(v -> showMemberMenu());
         memberChip.setOnCloseIconClickListener(v -> viewModel.setMemberFilter(null));
         sortChip.setOnClickListener(v -> viewModel.toggleSortOrder());
+        matchCaseChip.setOnCheckedChangeListener((chip, checked) -> {
+            if (!renderingQuery) {
+                viewModel.setMatchCase(checked);
+            }
+        });
         clearFiltersButton.setOnClickListener(v -> {
             renderingQuery = true;
             searchInput.setText("");
@@ -227,6 +234,9 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         memberChip.setCloseIconResource(R.drawable.ic_close);
 
         sortChip.setText(query.getSortOrder().getDisplayName());
+        if (matchCaseChip.isChecked() != query.isMatchCase()) {
+            matchCaseChip.setChecked(query.isMatchCase());
+        }
         UiUtils.setVisible(clearFiltersButton, query.isFiltered());
         renderingQuery = false;
     }
