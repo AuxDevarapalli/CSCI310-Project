@@ -70,6 +70,7 @@
     <string name="tab_members">Members</string>
     <string name="action_add_expense">Add expense</string>
     <string name="action_settle_up">Settle up</string>
+    <string name="action_record_payment">Record payment</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_edit_group">Edit group</string>
     <string name="action_delete_group">Delete group</string>
@@ -81,6 +82,7 @@
     <string name="filter_all">All</string>
     <string name="filter_expenses">Expenses</string>
     <string name="filter_settlements">Settlements</string>
+    <string name="filter_match_case">Match case</string>
     <string name="filter_category">Category</string>
     <string name="filter_all_categories">All categories</string>
     <string name="filter_member">Member</string>
@@ -179,6 +181,10 @@
     <string name="title_edit_settlement">Edit settlement</string>
     <string name="title_who_did_you_pay">Who did you pay?</string>
     <string name="settlement_intro">Record a payment you made to another member outside SplitSmart, for example with Venmo, Zelle or cash.</string>
+    <string name="settlement_intro_received">Record a payment another member made to you outside SplitSmart, for example with Venmo, Zelle or cash.</string>
+    <string name="settlement_direction_paid">I paid</string>
+    <string name="settlement_direction_received">I was paid</string>
+    <string name="title_who_paid_you">Who paid you?</string>
     <string name="hint_paid_to">Paid to</string>
     <string name="hint_amount_paid">Amount paid</string>
     <string name="action_pay_full_amount">Pay the full amount</string>
@@ -188,6 +194,12 @@
     <string name="settlement_you_owe">You owe %1$s %2$s.</string>
     <string name="settlement_up_to">Up to %1$s</string>
     <string name="settlement_owe_nothing">You don\'t owe %1$s anything right now, so there is nothing to settle.</string>
+    <string name="settlement_choose_payer">Choose the member who paid you.</string>
+    <string name="settlement_owed_by_nobody">Nobody in this group owes you money right now, so there is nothing to record.</string>
+    <string name="settlement_owes_you">%1$s owes you %2$s.</string>
+    <string name="settlement_owes_you_nothing">%1$s doesn\'t owe you anything right now, so there is nothing to record.</string>
+    <string name="settlement_option_owes_you">%1$s · owes you %2$s</string>
+    <string name="action_received_full_amount">They paid the full amount</string>
     <string name="settlement_no_other_members">There are no other members in this group yet.</string>
     <string name="settlement_option_owed">%1$s · you owe %2$s</string>
     <string name="settlement_option_nothing">%1$s · nothing owed</string>

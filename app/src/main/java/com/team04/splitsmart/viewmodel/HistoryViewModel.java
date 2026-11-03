@@ -186,6 +186,15 @@ public class HistoryViewModel extends BaseViewModel {
         }
     }
 
+    /** Switches keyword search between ignoring case (the default) and matching it exactly. */
+    public void setMatchCase(boolean matchCase) {
+        if (matchCase != query.isMatchCase()) {
+            HistoryQuery next = query.copy();
+            next.setMatchCase(matchCase);
+            applyQuery(next);
+        }
+    }
+
     /** Expense, settlement, or {@code null} for both. Settlements have no category. */
     public void setTypeFilter(TransactionType type) {
         HistoryQuery next = query.copy();
@@ -222,10 +231,11 @@ public class HistoryViewModel extends BaseViewModel {
         setSortOrder(query.getSortOrder().toggled());
     }
 
-    /** Removes the keyword and all filters but keeps the sort order. */
+    /** Removes the keyword and all filters but keeps the sort order and the match-case choice. */
     public void clearFilters() {
         HistoryQuery next = HistoryQuery.defaults();
         next.setSortOrder(query.getSortOrder());
+        next.setMatchCase(query.isMatchCase());
         applyQuery(next);
     }
 }

@@ -60,10 +60,10 @@ single-field filter, and sorting happens in the app.
 ./gradlew test
 ```
 
-Runs 71 JUnit tests for the business logic (money parsing/formatting, every split method
-and the FR 3.5 rounding rule, pairwise balances, validation, history filtering, monthly
-summaries, member-management helpers) using the exact examples from the customer description.
-They need no Firebase.
+Runs 74 JUnit tests for the business logic (money parsing/formatting, every split method
+and the FR 3.5 rounding rule, pairwise balances, validation, history filtering and
+case-sensitive search, monthly summaries, member-management helpers) using the exact examples
+from the customer description. They need no Firebase.
 
 Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firestore emulator):
 
@@ -71,8 +71,9 @@ Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firesto
 cd firestore-tests && npm install && npm test
 ```
 
-25 tests check NFR 4 on the server side: members-only access, owner-only group changes,
-creator-only edits, locked USC email/ID, unique USC IDs, valid document contents, and the
+29 tests check NFR 4 on the server side: members-only access, owner-only group changes,
+creator-only edits, locked USC email/ID, unique USC IDs, valid document contents, settlements
+recorded by either the payer or the receiver (but never by a third member), and the
 leave / remove member / transfer ownership rules.
 
 ### Running the whole app against local Firebase emulators (optional)
@@ -80,17 +81,51 @@ leave / remove member / transfer ownership rules.
 Useful for testing without creating accounts in the shared Firebase project:
 
 ```bash
-firebase emulators:start --only auth,firestore --project splitsmart-team04   # terminal 1
-./gradlew installDebug -Psplitsmart.emulatorHost=10.0.2.2                     # terminal 2, emulator running
+cd firestore-tests && npm run emulators                     # terminal 1 (after npm install)
+cd firestore-tests && npm run seed:emulator                 # terminal 2: optional demo data
+./gradlew installDebug -Psplitsmart.emulatorHost=10.0.2.2   # Android emulator running
 ```
 
 `10.0.2.2` is how the Android emulator reaches your computer. Builds without the flag always use
 the real Firebase project.
 
-## 4. Demo video script (what the TA grades)
+## 4. Demo (what the TA checks)
 
-Use **two devices** (two emulators, or an emulator and a phone) so one member's changes can
-be shown on another member's screen. Accounts can also be switched with *Profile → Log out*.
+The TA's *Project 2.3 Demo Checklist* asks for four test accounts, at least two groups with
+different owners, a group to delete, and records in more than one month. The app always stamps
+today's date, so past-month records have to be prepared in the database. One command does all
+of it:
+
+```bash
+cd firestore-tests && npm install && npm run seed   # real splitsmart-team04 project
+```
+
+Use `npm run seed:emulator` instead to fill the local emulators (section 3). The script signs in
+as each demo user and writes through the normal security rules. Running it again first deletes
+every group the demo accounts own, so the demo always starts from the state below. It never
+touches anyone else's groups.
+
+**Demo accounts** (password for all four: `splitsmart-demo`):
+`alice.demo@usc.edu`, `bob.demo@usc.edu`, `carol.demo@usc.edu`, `david.demo@usc.edu`.
+Switch users with *Profile → Log out*, or run two emulators.
+
+| Group (owner) | What it shows | Expected numbers |
+|---|---|---|
+| **Apartment 4B** (Alice) | Separate totals (Feature 4) | Groceries $20.00 (Alice paid; Alice, Bob), Cleaning supplies $10.00 (Alice paid; Alice, Carol), Gas for the car $8.00 (David paid; David, Alice). Alice: **$15.00 to receive, $4.00 to pay**. |
+| **Road Trip** (Bob) | Debts add up and offset | Gas $20.00 + Snacks $10.00 (Bob paid; Bob, Alice), Parking $8.00 (Alice paid; Alice, Bob). Alice owes Bob **$11.00**; a $5.00 settlement leaves **$6.00**. Carol is settled up. |
+| **Study Group** (Carol) | No simplifying across pairs; recording an expense you're not part of | Textbook $20.00 (Bob paid; Bob, Alice), Printing $20.00 (Carol paid; Carol, Bob, *recorded by Alice*). Alice owes Bob $10.00, Bob owes Carol $10.00, **no** Alice–Carol balance. |
+| **Dinner Club** (David) | Splits, history, search, settlements from both sides, two months of summaries | This month: Pizza night $30.00 Food (Alice paid, equal $10.00 each for Alice, Bob, Carol), Uber to the concert $20.00 Transportation (Bob paid; Bob, Carol), Carol → Alice $5.00 "Venmo for pizza" (recorded by Carol, who paid), Carol → Bob $4.00 "Cash" (recorded by Bob, who was paid). Last month: Concert tickets $30.00 Entertainment (percentage: David 50% $15.00, Bob 30% $9.00, Alice 20% $6.00, Carol 0%), Farmers market $30.00 Food (exact: David $15.00, Bob $10.00, Alice $5.00, Carol $0.00). Summary: this month **2 expenses, $50.00** (Food $30.00 + Transportation $20.00, settlements excluded); last month **2 expenses, $60.00**. Alice: receive $15.00, pay $11.00. |
+| **Delete Me** (Alice) | Deleting a group removes its expenses and settlements | Test expense $12.00 and Bob's $6.00 settlement. |
+
+**Settled-expense policy** (the checklist asks you to explain it): SplitSmart uses the accepted
+*"allow changes"* policy. Expenses stay editable by their creator even after a settlement, because
+balances are always recalculated from every expense and settlement. If an edit makes a settlement
+larger than the new debt, the balance flips: for example, Bob settles his $10.00 with Alice, Alice
+then edits the expense so Bob's share is $6.00, and Alice now owes Bob $4.00. Nothing is locked, so
+deleting a settlement simply restores the debt it paid off. New settlements are still limited to
+what is currently owed.
+
+Demo script. You can combine rows, and doing the required features before the extras is safest:
 
 | # | Requirement | What to show |
 |---|---|---|
@@ -102,14 +137,14 @@ be shown on another member's screen. Accounts can also be switched with *Profile
 | 6 | FR 2.3, 3.3 | Exact split: amounts that don't add up show "Amounts add up to $28.00, not $30.00" and Save is refused; "Fill evenly" helps. Show an amount with 3 decimals is rejected. |
 | 7 | FR 3.4–3.5 | Percentage split $10.01 at 50/50 → $5.01 and $5.00. Percentages that don't total 100% are refused. |
 | 8 | FR 4.1–4.4 | Balances tab: total to pay and total to receive shown separately, one line per member ("Bob owes you …", "You owe …", "settled up"). Show a chain (Alice→Bob→Carol) is **not** simplified. |
-| 9 | FR 5.1–5.2 | As Bob, Settle up → pay Alice. Show "more than owed" and "$0" are refused; record a valid amount; Alice's balance drops after refresh. |
-| 10 | FR 5.4–5.6 | History: newest first, settlements labeled "Settlement"; keyword search on titles/notes; filter by type, category, member; flip the sort order; open a transaction for full details. |
+| 9 | FR 5.1–5.2 | Settlements from **either side**. As Alice in Road Trip: *Settle up → I paid → Bob*; $0 and more than $11.00 are refused; $5.00 leaves $6.00. As Alice in Dinner Club: Balances → *Record payment* next to Carol (*I was paid*). The details screen shows who recorded each settlement. |
+| 10 | FR 5.4–5.6 | History: newest first, settlements labeled "Settlement"; keyword search on titles and notes ("cheese" finds an expense note, "cash" a settlement note); turn on **Match case**: "Pizza" finds only Pizza night, "pizza" only the "Venmo for pizza" settlement; filter by type, category, member; flip the sort order; open a transaction for full details. |
 | 11 | FR 2.7–2.9, 5.3 | Edit an expense (balances/history/summary update) and delete one with the confirmation dialog. As another member, Edit/Delete are hidden. Same for a settlement. |
 | 12 | FR 5.7 | Summary tab: pick a month; number of expenses, total, and per-category totals that add up; settlements excluded. |
 | 13 | NFR 1, 3 | Close and reopen the app: data is still there. Changes made on device A appear on device B after pull-to-refresh. |
 | 14 | Live updates | With both devices on the same group, add an expense on device A: device B's History and Balances update **without** refreshing. Add someone to a group: it appears on their home screen immediately. |
 | 15 | Member management | As the owner, Members tab → ⋮ next to Carol → *Remove from group* while she still owes money → refused with the amount. As Bob (settled up), menu → *Leave group*. As the owner, ⋮ → *Make owner* on another member, then show the old owner now sees *Leave group* instead of Edit/Delete. Bob's old expenses still show his name. |
-| 16 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up shortcut on balances, Share balances, month picker, dark mode. |
+| 16 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up and Record-payment shortcuts on balances, Match case search, Share balances, month picker, dark mode. |
 
 ## 5. How the code is organized
 
@@ -164,16 +199,22 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 The app follows our 2.1 requirements and 2.2 design. It has been verified as follows:
 
 * full Gradle build (`./gradlew assembleDebug`) with the real libraries;
-* 71 JUnit tests for the business logic, all passing;
-* `firestore.rules` tested against the real Firestore emulator (25 tests, all passing);
+* 74 JUnit tests for the business logic, all passing;
+* `firestore.rules` tested against the real Firestore emulator (29 tests, all passing);
 * an end-to-end run on an Android 15 emulator against the local Firebase emulators:
   registration and login (with error cases), profile, groups and members, equal and percentage
   splits, balances, settlements and their limits, history search, the monthly summary, group
-  deletion, live updates and member management. Still to check by hand before recording the
-  demo: editing and deleting a transaction, exact splits, history filters and sort, Share
-  balances, and dark mode.
+  deletion, live updates and member management;
+* a second end-to-end run with the demo data from section 4: every group's balances and both
+  months of the Dinner Club summary match the table; a settlement recorded by the receiver
+  (limits, editing, the payer seeing it without Edit/Delete) and one recorded by the payer
+  ($5.00 against $11.00 leaves $6.00); and Match case search.
 
-**After pulling these changes, whoever owns the Firebase project must re-publish
-`firestore.rules`** (console → Firestore → Rules, or `firebase deploy --only firestore:rules`).
-Otherwise leaving a group, removing a member and transferring ownership fail with "You don't
-have permission to do that."
+Still to check by hand before recording the demo: editing and deleting an expense, deleting a
+settlement, typing an exact split in the form, history filters and sort, Share balances, and
+dark mode.
+
+**Whenever a pull request changes `firestore.rules`, whoever owns the Firebase project must
+re-publish it** (console → Firestore → Rules, or `firebase deploy --only firestore:rules`).
+Otherwise the new behavior fails with "You don't have permission to do that." For example,
+recording a payment you received needs the current rules.
