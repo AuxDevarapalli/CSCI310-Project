@@ -150,7 +150,8 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- FR 5.2: more than $0.00 and no more than what is owed. -->
+            <!-- FR 5.2: more than $0.00 and no more than what is owed. A minus sign can be
+                 typed so a negative amount is rejected with a message. -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/settlement_amount_layout"
                 android:layout_width="match_parent"
@@ -165,7 +166,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:imeOptions="actionDone"
-                    android:inputType="numberDecimal"
+                    android:inputType="numberDecimal|numberSigned"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 

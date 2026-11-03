@@ -82,12 +82,14 @@
                 app:helperText="@string/helper_usc_id"
                 app:startIconDrawable="@drawable/ic_badge">
 
+                <!-- Plain text rather than a number keyboard, so an ID containing a letter can
+                     be typed and is rejected with a message (demo checklist, FR 1.1). -->
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/register_usc_id"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:imeOptions="actionNext"
-                    android:inputType="number"
+                    android:inputType="textNoSuggestions"
                     android:maxLength="10"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
