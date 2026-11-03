@@ -47,6 +47,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
     private Chip memberChip;
     private Chip sortChip;
     private Chip matchCaseChip;
+    private RecyclerView list;
     private TextView countText;
     private MaterialButton clearFiltersButton;
     private View emptyView;
@@ -96,7 +97,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         adapter = new TransactionAdapter(viewModel.getCurrentUserId(), transaction ->
                 startActivity(TransactionDetailActivity.newIntent(requireContext(), groupId,
                         transaction.getId())));
-        RecyclerView list = view.findViewById(R.id.history_list);
+        list = view.findViewById(R.id.history_list);
         list.setAdapter(adapter);
 
         refreshLayout.setOnRefreshListener(this::refresh);
@@ -178,7 +179,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
     }
 
     private void renderList(List<Transaction> transactions) {
-        adapter.submitList(transactions);
+        UiUtils.submitKeepingTop(adapter, list, transactions);
         if (transactions == null) {
             return;
         }

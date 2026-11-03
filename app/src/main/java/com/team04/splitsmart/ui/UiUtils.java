@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.ListAdapter;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.team04.splitsmart.R;
@@ -58,6 +60,21 @@ public final class UiUtils {
 
     public static String textOf(EditText editText) {
         return editText.getText() == null ? "" : editText.getText().toString();
+    }
+
+    /**
+     * Shows a new list and, if the user was looking at the top of it, keeps the top in view.
+     * Without this, a row inserted at position 0 (the newest transaction or group) appears just
+     * above the visible area, so it looks as if nothing changed until the user scrolls up.
+     */
+    public static <T> void submitKeepingTop(ListAdapter<T, ?> adapter, RecyclerView list,
+                                            List<T> items) {
+        boolean atTop = !list.canScrollVertically(-1);
+        adapter.submitList(items, () -> {
+            if (atTop) {
+                list.scrollToPosition(0);
+            }
+        });
     }
 
     public static void hideKeyboard(View view) {
