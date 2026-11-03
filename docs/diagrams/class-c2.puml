@@ -87,6 +87,7 @@ package "viewmodel" {
     +setKeyword() / setTypeFilter() / setCategoryFilter()
     +setMemberFilter() / setSortOrder()
     +NEW(toggleSortOrder() / clearFilters())
+    +NEW(setMatchCase(matchCase))
   }
   class SummaryViewModel <<changed>> {
     +NEW(load(groupId))
