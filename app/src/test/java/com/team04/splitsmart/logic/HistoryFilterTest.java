@@ -80,6 +80,29 @@ public class HistoryFilterTest {
     }
 
     @Test
+    public void matchCaseOnlyFindsTheExactCapitalization() {
+        HistoryQuery query = HistoryQuery.defaults();
+        query.setMatchCase(true);
+        query.setKeyword("Uber");
+        assertEquals(Arrays.<Transaction>asList(uber), filter.apply(all, query));
+        query.setKeyword("uber");
+        assertTrue(filter.apply(all, query).isEmpty());
+        assertTrue(query.copy().isMatchCase());
+    }
+
+    @Test
+    public void matchCaseAppliesToExpenseAndSettlementNotes() {
+        Expense withNote = TestData.expenseWithNote("Dinner", "paid with Venmo card", 9_000_000);
+        List<Transaction> notes = Arrays.asList(payBack, withNote);
+        HistoryQuery query = HistoryQuery.defaults();
+        query.setMatchCase(true);
+        query.setKeyword("Venmo");
+        assertEquals(2, filter.apply(notes, query).size());
+        query.setKeyword("venmo");
+        assertTrue(filter.apply(notes, query).isEmpty());
+    }
+
+    @Test
     public void canFilterByType() {
         HistoryQuery query = HistoryQuery.defaults();
         query.setTypeFilter(TransactionType.SETTLEMENT);

@@ -113,7 +113,7 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
         TextView avatar = row.findViewById(R.id.balance_avatar);
         TextView name = row.findViewById(R.id.balance_name);
         TextView status = row.findViewById(R.id.balance_status);
-        View settleButton = row.findViewById(R.id.balance_settle_button);
+        TextView settleButton = row.findViewById(R.id.balance_settle_button);
 
         UiUtils.bindAvatar(avatar, pair.getOtherUser());
         name.setText(pair.getOtherUser().getName());
@@ -127,10 +127,19 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
             color = R.color.amount_neutral;
         }
         status.setTextColor(UiUtils.color(requireContext(), color));
-        // Extra: shortcut that opens the settlement form for this member.
-        UiUtils.setVisible(settleButton, pair.currentUserOwes());
-        settleButton.setOnClickListener(v -> startActivity(SettlementFormActivity.newCreateIntent(
-                requireContext(), groupId, pair.getOtherUserId())));
+        // Extra: shortcut that opens the settlement form for this member, from either side.
+        UiUtils.setVisible(settleButton, pair.currentUserOwes() || pair.owesCurrentUser());
+        if (pair.owesCurrentUser()) {
+            settleButton.setText(R.string.action_record_payment);
+            settleButton.setOnClickListener(v -> startActivity(
+                    SettlementFormActivity.newReceivedIntent(requireContext(), groupId,
+                            pair.getOtherUserId())));
+        } else {
+            settleButton.setText(R.string.action_settle_up);
+            settleButton.setOnClickListener(v -> startActivity(
+                    SettlementFormActivity.newCreateIntent(requireContext(), groupId,
+                            pair.getOtherUserId())));
+        }
     }
 
     /** "Bob owes you $10.00", "You owe David $4.00" or "You and Erin are settled up". */

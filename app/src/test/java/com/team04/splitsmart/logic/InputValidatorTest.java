@@ -143,6 +143,19 @@ public class InputValidatorTest {
         assertField(validator.validateSettlement(500, 0), ValidationResult.FIELD_RECEIVER);
     }
 
+    @Test
+    public void settlementRecordedByTheMemberWhoWasPaidHasTheSameLimits() {
+        // $5.00 against $11.00 owed is fine and leaves $6.00 (demo checklist example).
+        assertTrue(validator.validateSettlement(500, 1100, true).isValid());
+        assertField(validator.validateSettlement(0, 1100, true), ValidationResult.FIELD_AMOUNT);
+        ValidationResult tooMuch = validator.validateSettlement(1101, 1100, true);
+        assertField(tooMuch, ValidationResult.FIELD_AMOUNT);
+        assertEquals("Amount cannot be more than what they owe you ($11.00)",
+                tooMuch.getErrorMessage());
+        assertEquals("This member does not owe you any money",
+                validator.validateSettlement(500, 0, true).getErrorMessage());
+    }
+
     private static Expense expense(long total, String payer, Share... shares) {
         return new Expense(null, "g", payer, "2026-09-17", 1, "", "Dinner", total,
                 Category.FOOD, payer, SplitMethod.EXACT, Arrays.asList(shares));
