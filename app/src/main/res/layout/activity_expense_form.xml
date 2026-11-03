@@ -61,6 +61,8 @@
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- FR 2.3: a minus sign can be typed so a negative total is rejected with a
+                 message, like zero and amounts with more than two decimal places. -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/expense_amount_layout"
                 android:layout_width="match_parent"
@@ -76,7 +78,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:imeOptions="actionDone"
-                    android:inputType="numberDecimal"
+                    android:inputType="numberDecimal|numberSigned"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
