@@ -67,8 +67,9 @@ package "viewmodel" {
     +save(title, category, note)
   }
   class SettlementViewModel <<changed>> {
-    +CHG(init(groupId, settlementId, receiverId))
-    +selectReceiver(uid)
+    +CHG(init(groupId, settlementId, member, received))
+    +NEW(setReceived(received))
+    +CHG(selectOther(uid))
     +CHG(save(amountText, note))
   }
   class TransactionDetailViewModel <<changed>> {
@@ -103,7 +104,7 @@ package "viewmodel" {
   class SplitStatus <<new>> {
     message, valid
   }
-  class ReceiverOption <<new>> {
+  class MemberOption <<new>> {
     user, owedCents
   }
 }
@@ -124,7 +125,7 @@ BaseViewModel ..> Event
 GroupListViewModel ..> GroupListItem
 ExpenseViewModel ..> ParticipantRow
 ExpenseViewModel ..> SplitStatus
-SettlementViewModel ..> ReceiverOption
+SettlementViewModel ..> MemberOption
 HistoryViewModel ..> FormerMembers
 
 @enduml
