@@ -13,17 +13,20 @@ participant ":InputValidator" as V
 participant ":DateProvider" as D
 participant "db :\nFirebaseFirestore" as DB
 
-User -> UI : tap Settle up, NEW(or Settle up next to a balance)
-UI -> VM : CHG(init(groupId, null, receiverId))
+User -> UI : tap Settle up, NEW(or Settle up / Record payment next to a balance)
+UI -> VM : CHG(init(groupId, null, member, received))
 VM -[#C76E00]> GR : CHG(getGroup(groupId, cb))
 VM -[#C76E00]> UR : CHG(getUsers(group.memberIds, cb))
 VM -[#C76E00]> TR : CHG(getTransactions(groupId, cb))
-note right of VM #FFE7C2 : CHANGED: everything is loaded once in init()\ninstead of on every selectReceiver()
+note right of VM #FFE7C2 : CHANGED: everything is loaded once in init()\ninstead of on every selectOther()
 TR -> DB : get groups/{groupId}/transactions
 TR --> VM : transactions
-User -> UI : choose the member paid
-UI -> VM : selectReceiver(uid)
-VM -> BC : CHG(amountOwed(currentUid, uid, transactions))
+User -> UI : NEW(choose "I paid" or "I was paid")
+UI -> VM : NEW(setReceived(received))
+User -> UI : choose the other member
+UI -> VM : CHG(selectOther(uid))
+VM -> BC : CHG(amountOwed(payer, receiver, transactions))
+note right of VM #FFE7C2 : CHANGED: payer and receiver follow the direction:\n(currentUid, uid) for "I paid", (uid, currentUid) for "I was paid"
 note right of BC : amountOwed = max(0, -netBetween(currentUid, uid, transactions))\nCHG(the settlement being edited is left out of the sum)
 BC --> VM : owedCents
 alt owedCents == 0
@@ -31,7 +34,7 @@ alt owedCents == 0
   UI --> User : "You don't owe Bob anything", Save disabled
 else owedCents > 0
   VM --> UI : owedCents (LiveData)
-  UI --> User : "You owe Bob $11.00", NEW(Pay-the-full-amount chip)
+  UI --> User : "You owe Bob $11.00" or CHG("Bob owes you $11.00"), NEW(full-amount chip)
 end
 User -> UI : enter amount and note, tap Save
 UI -> VM : save(amountText, note)
@@ -40,8 +43,8 @@ M --> VM : amountCents
 VM -[#2E7D32]> TR : NEW(getTransactions(groupId, cb))
 note right of VM #D9F2DE : NEW: re-read right before saving so the\nlimit uses the current balance (FR 5.2)
 TR --> VM : fresh transactions
-VM -[#2E7D32]> BC : NEW(amountOwed(currentUid, receiverId, transactions))
-VM -> V : validateSettlement(amountCents, owedCents)
+VM -[#2E7D32]> BC : NEW(amountOwed(payer, receiver, transactions))
+VM -> V : CHG(validateSettlement(amountCents, owedCents, received))
 V --> VM : result
 alt not valid (not above $0.00, or more than owed)
   VM --> UI : fieldError (LiveData)
