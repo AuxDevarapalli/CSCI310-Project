@@ -2,9 +2,12 @@
   "name": "splitsmart-firestore-rules-tests",
   "private": true,
   "type": "module",
-  "description": "Checks firestore.rules against the Firestore emulator (NFR 4).",
+  "description": "Checks firestore.rules against the Firestore emulator (NFR 4) and prepares demo data.",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-splitsmart \"node --test\""
+    "test": "firebase emulators:exec --only firestore --project demo-splitsmart \"node --test\"",
+    "emulators": "firebase emulators:start --only auth,firestore --project splitsmart-team04",
+    "seed:emulator": "node seed-demo-data.js --emulator",
+    "seed": "node seed-demo-data.js --live"
   },
   "engines": {
     "node": ">=20"

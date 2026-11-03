@@ -31,7 +31,7 @@ public class HistoryFilter {
             return result;
         }
         HistoryQuery q = query == null ? HistoryQuery.defaults() : query;
-        String keyword = q.getKeyword().toLowerCase(Locale.US);
+        String keyword = q.isMatchCase() ? q.getKeyword() : q.getKeyword().toLowerCase(Locale.US);
         for (Transaction transaction : all) {
             if (matches(transaction, q, keyword)) {
                 result.add(transaction);
@@ -63,15 +63,22 @@ public class HistoryFilter {
         if (query.getMemberFilter() != null && !transaction.involves(query.getMemberFilter())) {
             return false;
         }
-        return keyword.isEmpty() || matchesKeyword(transaction, keyword);
+        return keyword.isEmpty() || matchesKeyword(transaction, keyword, query.isMatchCase());
     }
 
-    /** Keyword search over expense titles and transaction notes, ignoring case. */
-    private boolean matchesKeyword(Transaction transaction, String lowerKeyword) {
+    /**
+     * Keyword search over expense titles and transaction notes. Case is ignored unless the user
+     * turned on "Match case"; when it is ignored, {@code keyword} is already lower-cased.
+     */
+    private boolean matchesKeyword(Transaction transaction, String keyword, boolean matchCase) {
         if (transaction instanceof Expense
-                && ((Expense) transaction).getTitle().toLowerCase(Locale.US).contains(lowerKeyword)) {
+                && contains(((Expense) transaction).getTitle(), keyword, matchCase)) {
             return true;
         }
-        return transaction.getNote().toLowerCase(Locale.US).contains(lowerKeyword);
+        return contains(transaction.getNote(), keyword, matchCase);
+    }
+
+    private static boolean contains(String text, String keyword, boolean matchCase) {
+        return (matchCase ? text : text.toLowerCase(Locale.US)).contains(keyword);
     }
 }

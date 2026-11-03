@@ -60,7 +60,7 @@
             android:text="@string/filter_settlements" />
     </com.google.android.material.chip.ChipGroup>
 
-    <!-- FR 5.6: category and member filters plus the sort order. -->
+    <!-- FR 5.6: category and member filters, the sort order and case-sensitive search. -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/history_option_group"
         android:layout_width="match_parent"
@@ -90,6 +90,14 @@
             android:layout_height="wrap_content"
             android:text="@string/sort_newest_first"
             app:chipIcon="@drawable/ic_sort" />
+
+        <!-- Keyword search ignores case unless this is on. -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_match_case"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_match_case" />
     </com.google.android.material.chip.ChipGroup>
 
     <LinearLayout

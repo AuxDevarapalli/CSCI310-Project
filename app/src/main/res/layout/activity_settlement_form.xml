@@ -43,28 +43,59 @@
             android:orientation="vertical"
             android:padding="@dimen/space_l">
 
-            <TextView
+            <!-- FR 5.1: either side of the payment can record it. The logged-in user is always
+                 one side; the other side is picked from the group's members. -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/settlement_direction_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:checkedButton="@+id/settlement_direction_paid"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settlement_direction_paid"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settlement_direction_paid" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settlement_direction_received"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settlement_direction_received" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <TextView
+                android:id="@+id/settlement_intro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
                 android:text="@string/settlement_intro"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <!-- FR 5.1: the user who paid is always the logged-in user. -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/settlement_payer_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_l"
-                android:enabled="false"
                 android:hint="@string/hint_paid_by"
+                app:endIconDrawable="@drawable/ic_arrow_drop_down"
+                app:endIconMode="custom"
                 app:startIconDrawable="@drawable/ic_person">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/settlement_payer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:enabled="false"
+                    android:clickable="true"
+                    android:cursorVisible="false"
+                    android:focusable="false"
                     android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 

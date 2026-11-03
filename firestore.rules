@@ -122,12 +122,14 @@ service cloud.firestore {
             && data.payerId in data.participantIds;
         }
 
-        // FR 5.1, 5.2: the member who owes money records the payment to another member.
+        // FR 5.1, 5.2: either side of a payment can record it, the member who paid or the
+        // member who was paid, but nobody can record a payment between two other people.
         function isValidSettlement(data) {
           return data.type == 'SETTLEMENT'
             && data.amountCents is int
             && data.amountCents > 0
-            && data.payerId == request.auth.uid
+            && (data.payerId == request.auth.uid || data.receiverId == request.auth.uid)
+            && data.payerId in group().memberIds
             && data.receiverId in group().memberIds
             && data.receiverId != data.payerId;
         }

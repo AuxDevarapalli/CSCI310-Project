@@ -219,20 +219,31 @@ public class InputValidator {
 
     /**
      * FR 5.2: a settlement must be greater than $0.00 and no more than the amount the payer
-     * currently owes the receiver.
+     * currently owes the receiver. Used when the logged-in user is the one who paid.
      */
     public ValidationResult validateSettlement(long amountCents, long owedCents) {
+        return validateSettlement(amountCents, owedCents, false);
+    }
+
+    /**
+     * FR 5.2 for either side of the payment: {@code receivedByUser} is true when the logged-in
+     * user is recording a payment someone made to them, which only changes the wording.
+     */
+    public ValidationResult validateSettlement(long amountCents, long owedCents,
+                                               boolean receivedByUser) {
         if (owedCents <= 0) {
-            return ValidationResult.error(ValidationResult.FIELD_RECEIVER,
-                    "You do not owe this member any money");
+            return ValidationResult.error(ValidationResult.FIELD_RECEIVER, receivedByUser
+                    ? "This member does not owe you any money"
+                    : "You do not owe this member any money");
         }
         if (amountCents <= 0) {
             return ValidationResult.error(ValidationResult.FIELD_AMOUNT,
                     "Amount must be greater than $0.00");
         }
         if (amountCents > owedCents) {
-            return ValidationResult.error(ValidationResult.FIELD_AMOUNT,
-                    "Amount cannot be more than what you owe (" + Money.format(owedCents) + ")");
+            return ValidationResult.error(ValidationResult.FIELD_AMOUNT, receivedByUser
+                    ? "Amount cannot be more than what they owe you (" + Money.format(owedCents) + ")"
+                    : "Amount cannot be more than what you owe (" + Money.format(owedCents) + ")");
         }
         return ValidationResult.ok();
     }
