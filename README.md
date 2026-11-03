@@ -205,14 +205,25 @@ The app follows our 2.1 requirements and 2.2 design. It has been verified as fol
   registration and login (with error cases), profile, groups and members, equal and percentage
   splits, balances, settlements and their limits, history search, the monthly summary, group
   deletion, live updates and member management;
-* a second end-to-end run with the demo data from section 4: every group's balances and both
-  months of the Dinner Club summary match the table; a settlement recorded by the receiver
-  (limits, editing, the payer seeing it without Edit/Delete) and one recorded by the payer
-  ($5.00 against $11.00 leaves $6.00); and Match case search.
-
-Still to check by hand before recording the demo: editing and deleting an expense, deleting a
-settlement, typing an exact split in the form, history filters and sort, Share balances, and
-dark mode.
+* a full pass through the TA's *Project 2.3 Demo Checklist* on an Android 15 emulator with the
+  demo data from section 4, item by item:
+  * **Feature 1:** each registration rejection (non-USC email, 9-digit ID, 10 characters with
+    a letter, taken email, taken USC ID); rename, logout and a wrong password; a blank group
+    name; adding members, including both error messages; a non-owner seeing members but no
+    add/edit/delete; renaming; and deleting a group, after which its expense and settlement
+    were gone from the database.
+  * **Feature 2:** $0, negative and 3-decimal amounts refused; an expense recorded for others
+    by a non-participant; editing payer, participants and amount; Cancel and Delete on the
+    confirmation.
+  * **Features 3 and 4:** every split example and rejection, including $0.00 and 0% shares;
+    every balance example in section 4; balances updating after creating, editing and deleting
+    expenses and settlements.
+  * **Feature 5:** settlements from both sides; type, category and member filters; both sort
+    orders; Match case; a non-participant viewing an expense; editing last month's expense,
+    which kept its date and moved only that month's total; an empty month showing
+    0 expenses and $0.00.
+  * **Extras:** Share balances and dark mode.
+  * No SplitSmart crash was logged.
 
 **Whenever a pull request changes `firestore.rules`, whoever owns the Firebase project must
 re-publish it** (console → Firestore → Rules, or `firebase deploy --only firestore:rules`).

@@ -24,6 +24,7 @@ import java.util.List;
 public class GroupListActivity extends BaseActivity {
     private GroupListViewModel viewModel;
     private GroupAdapter adapter;
+    private RecyclerView list;
     private SwipeRefreshLayout refreshLayout;
     private View emptyView;
     private View errorView;
@@ -60,7 +61,7 @@ public class GroupListActivity extends BaseActivity {
 
         adapter = new GroupAdapter(currentUid, item -> startActivity(
                 GroupDetailActivity.newIntent(this, item.getGroup().getId())));
-        RecyclerView list = findViewById(R.id.groups_list);
+        list = findViewById(R.id.groups_list);
         list.setAdapter(adapter);
 
         refreshLayout.setOnRefreshListener(viewModel::loadGroups);
@@ -91,7 +92,7 @@ public class GroupListActivity extends BaseActivity {
     }
 
     private void render(List<GroupListItem> items) {
-        adapter.submitList(items);
+        UiUtils.submitKeepingTop(adapter, list, items);
         boolean empty = items == null || items.isEmpty();
         UiUtils.setVisible(emptyView, empty);
         if (!empty) {
