@@ -27,7 +27,7 @@ User -> UI : choose the other member
 UI -> VM : CHG(selectOther(uid))
 VM -> BC : CHG(amountOwed(payer, receiver, transactions))
 note right of VM #FFE7C2 : CHANGED: payer and receiver follow the direction:\n(currentUid, uid) for "I paid", (uid, currentUid) for "I was paid"
-note right of BC : amountOwed = max(0, -netBetween(currentUid, uid, transactions))\nCHG(the settlement being edited is left out of the sum)
+note right of BC : amountOwed = max(0, -netBetween(payer, receiver, transactions))\nCHG(the settlement being edited is left out of the sum)
 BC --> VM : owedCents
 alt owedCents == 0
   VM --> UI : owedCents = 0 (LiveData)
