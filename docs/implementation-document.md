@@ -183,8 +183,8 @@ reservation. The revised flow is Figure 3 in Section 5.6.
 *What changed:* In addition to the 2.2 access rules, `firestore.rules` now checks that a profile
 uses a `@usc.edu` email matching the login and a 10-digit USC ID; that only the name of a profile
 can change; that expenses have a positive total, member participants (at least two) and a payer
-who participates; that a settlement's payer is the person recording it and its receiver is
-another member; and that a transaction's creator and type never change. Two access rules were
+who participates; that a settlement is recorded by its payer or its receiver (never by a third
+member) and is between two different members (RC-9); and that a transaction's creator and type never change. Two access rules were
 also adjusted: the group owner may delete any transaction in the group, and reading a group that
 no longer exists is allowed (it reveals nothing and lets the app report "This group no longer
 exists" instead of a permission error).
@@ -237,7 +237,7 @@ all others existed and keep their 2.2 names.
 |---|---|---|
 | Application | (root) | `SplitSmartApp` <span class="tag new">NEW</span> |
 | C1 UI Views | `.ui` | `LoginActivity`, `RegisterActivity`, `GroupListActivity`, `ProfileActivity`, `GroupFormActivity`, `GroupDetailActivity`, `HistoryFragment`, `BalanceFragment`, `SummaryFragment`, `ExpenseFormActivity`, `SettlementFormActivity`, `TransactionDetailActivity`, `ConfirmDialog`; `BaseActivity` <span class="tag new">NEW</span>, `BaseFragment` <span class="tag new">NEW</span>, `MembersFragment` <span class="tag new">NEW</span>, `GroupPagerAdapter` <span class="tag new">NEW</span>, `GroupAdapter` <span class="tag new">NEW</span>, `TransactionAdapter` <span class="tag new">NEW</span>, `Refreshable` <span class="tag new">NEW</span>, `SimpleTextWatcher` <span class="tag new">NEW</span>, `UiUtils` <span class="tag new">NEW</span> |
-| C2 ViewModels | `.viewmodel` | `BaseViewModel`, `AuthViewModel`, `ProfileViewModel`, `GroupListViewModel`, `GroupViewModel`, `ExpenseViewModel`, `SettlementViewModel`, `TransactionDetailViewModel`, `BalanceViewModel`, `HistoryViewModel`, `SummaryViewModel`, `ViewModelFactory`, `AppContainer`; `Event` <span class="tag new">NEW</span>, `GroupListItem` <span class="tag new">NEW</span>, `ParticipantRow` <span class="tag new">NEW</span>, `SplitStatus` <span class="tag new">NEW</span>, `ReceiverOption` <span class="tag new">NEW</span>, `FormerMembers` <span class="tag new">NEW</span> |
+| C2 ViewModels | `.viewmodel` | `BaseViewModel`, `AuthViewModel`, `ProfileViewModel`, `GroupListViewModel`, `GroupViewModel`, `ExpenseViewModel`, `SettlementViewModel`, `TransactionDetailViewModel`, `BalanceViewModel`, `HistoryViewModel`, `SummaryViewModel`, `ViewModelFactory`, `AppContainer`; `Event` <span class="tag new">NEW</span>, `GroupListItem` <span class="tag new">NEW</span>, `ParticipantRow` <span class="tag new">NEW</span>, `SplitStatus` <span class="tag new">NEW</span>, `MemberOption` <span class="tag new">NEW</span>, `FormerMembers` <span class="tag new">NEW</span> |
 | C3 Validation and formatting | `.logic.validation` | `InputValidator`, `ValidationResult`, `Money`, `InvalidAmountException`, `DateProvider` |
 | C3 Split engine | `.logic.split` | `SplitCalculator` |
 | C3 Balance engine | `.logic.balance` | `BalanceCalculator`, `BalanceSummary`, `PairBalance` |
@@ -321,12 +321,12 @@ members it needs. This also means a form opened after the process was restarted 
 | `GroupListViewModel` | `loadGroups()` | `loadGroups()` producing `GroupListItem`s; + `startLiveUpdates()` | Each row also shows the user's totals in that group (extra feature); the list reloads when the user is added to or removed from a group elsewhere (AC-5). |
 | `GroupViewModel` | `createGroup(..)`, `addMember(email)` | + `load(groupId)`, `updateGroup(..)`, `deleteGroup()`, `isOwner()`, `getGroupGone()`; + `removeMember(uid)`, `leaveGroup()`, `transferOwnership(uid)`, `getLeftGroup()`, `startLiveUpdates(groupId)`, `getRemoteChange()` | FR 1.6 and FR 1.7 needed load, edit and delete; `groupGone` closes the screen if the group was deleted elsewhere or the user was removed (AC-2). Member management and live updates: DC-9, AC-5. Now also receives `TransactionRepository` and `BalanceCalculator` for the settled-up check. |
 | `ExpenseViewModel` | `init(group, null)` + setters, `recomputePreview()`, `save(title, category, note)` | `init(groupId, expenseId)`; same setters (`toggleParticipant` takes the checked state); + `selectAllParticipants()`, `fillEvenly()`; preview published as `ParticipantRow`s and a `SplitStatus` | DC-2; one ViewModel serves both create and edit (FR 2.7); helpers for the split inputs (extra). |
-| `SettlementViewModel` | `createSettlement(..)` (class diagram); `selectReceiver`, `save` (Figure 6) | `init(groupId, settlementId, receiverId)`, `selectReceiver(uid)`, `save(amountText, note)` | One ViewModel for create and edit (FR 5.3); the receiver can be preselected from the balance page. |
+| `SettlementViewModel` | `createSettlement(..)` (class diagram); `selectReceiver`, `save` (Figure 6) | `init(groupId, settlementId, member, received)`, `setReceived(received)`, `selectOther(uid)`, `save(amountText, note)` | One ViewModel for create and edit (FR 5.3). Either side of the payment can record it, so the ViewModel keeps a direction ("I paid" / "I was paid") and the other member, both of which the balance page can preselect (RC-9). |
 | `TransactionDetailViewModel` | `editTransaction(..)`, `deleteTransaction(id)` | `load(groupId, transactionId)`, `canEdit()`, `deleteTransaction()` | Editing happens in the two form ViewModels; the detail screen only decides whether Edit and Delete are shown (FR 2.7, FR 5.3). |
-| `HistoryViewModel` | `applyQuery(q)`; `load` and setters (Figure 7) | + `toggleSortOrder()`, `clearFilters()` | One-tap sort toggle and a "Clear filters" button. |
+| `HistoryViewModel` | `applyQuery(q)`; `load` and setters (Figure 7) | + `toggleSortOrder()`, `clearFilters()`, `setMatchCase(matchCase)` | One-tap sort toggle, a "Clear filters" button, and the Match case option (RC-13). |
 | `SummaryViewModel` | `loadMonth(month)` | `load(groupId)`, `loadMonth(month)`, `previousMonth()`, `nextMonth()` | The transactions must be loaded before any month can be summarised; arrows step between months. |
 | `AppContainer` | holds repositories | + `createDefault()` | Called by `SplitSmartApp` (AC-1). |
-| `Event`, `GroupListItem`, `ParticipantRow`, `SplitStatus`, `ReceiverOption` | — | <span class="tag new">NEW</span> small immutable state classes | Give each screen exactly the data it renders, so Activities contain no business logic. |
+| `Event`, `GroupListItem`, `ParticipantRow`, `SplitStatus`, `MemberOption` | — | <span class="tag new">NEW</span> small immutable state classes | Give each screen exactly the data it renders, so Activities contain no business logic. |
 | `FormerMembers` | — | <span class="tag new">NEW</span> `missingUserIds(transactions, knownIds)` | `HistoryViewModel` and `TransactionDetailViewModel` load the names of people who appear in old transactions but have left the group (DC-9). |
 
 **DC-4 <span class="tag chg">CHANGED</span> Business logic (C3).**
@@ -336,11 +336,11 @@ members it needs. This also means a form opened after the process was restarted 
 | `SplitCalculator` | `splitByPercent` and `splitExact` take a `LinkedHashMap` | FR 3.5 hands leftover cents out "from the first to the last participant", so the order of participants must be preserved by the parameter type. |
 | `SplitCalculator` | Leftover cents in a percentage split skip participants at 0% | A member who owes 0% should never owe a rounding cent (RC-4). |
 | `ValidationResult` | Adds `field`, `ok()`, `error(field, message)` | The form highlights the input that caused the problem. |
-| `InputValidator` | Adds `validateLogin`, `validateName`, `validateUscEmail`, `validateUscId`, `validatePassword`, `validateGroup`, `validateNote`, `normalizeEmail`, and a 5-argument `validateRegistration` | Every form validates before any database call; emails are compared in lower case so uniqueness (FR 1.2) is case-insensitive. |
+| `InputValidator` | Adds `validateLogin`, `validateName`, `validateUscEmail`, `validateUscId`, `validatePassword`, `validateGroup`, `validateNote`, `normalizeEmail`, a 5-argument `validateRegistration`, and a 3-argument `validateSettlement` whose messages fit a settlement recorded by the member who was paid (RC-9) | Every form validates before any database call; emails are compared in lower case so uniqueness (FR 1.2) is case-insensitive. |
 | `DateProvider` | Takes a `java.time.Clock`; adds `nowMillis()`, `currentMonth()`, `monthOf()`, `shiftMonth()`, `formatMonthLabel()` | Tests can fix the date; the monthly summary needs month arithmetic (FR 5.7). |
 | `Money` | Adds `MAX_CENTS`, `formatPlain`, `formatPercent` | Upper limit on amounts (RC-2); refilling inputs when editing; showing percentages. |
 | `BalanceCalculator` | Adds `amountOwed(debtor, creditor, txs)` and `computeTotals(uid, memberIds, txs)` | The settlement limit of FR 5.2 is `max(0, -netBetween(…))`; the home screen shows totals per group (extra). |
-| `HistoryQuery` | Adds `typeFilter`, `categoryFilter`, `copy()`, `isFiltered()` | The 2.2 class diagram showed only keyword and member filters, although FR 5.6 also requires type and category filters. |
+| `HistoryQuery` | Adds `typeFilter`, `categoryFilter`, `matchCase`, `copy()`, `isFiltered()` | The 2.2 class diagram showed only keyword and member filters, although FR 5.6 also requires type and category filters. `matchCase` makes keyword search case-sensitive (RC-13). |
 | `SummaryCalculator` | Adds `monthsWithExpenses()` | Lets the month picker list months that have expenses. |
 
 **DC-5 <span class="tag chg">CHANGED</span> Domain model (C3).** `Transaction` gains `groupId`
@@ -424,7 +424,7 @@ of maps; with a plain list the rules can check that every participant is a membe
 | Groups: change | owner only | owner: edit details and add or remove members while staying a member, or transfer ownership to an existing member (nothing else in that write); any other member: remove only themselves (AC-6) |
 | Groups: delete | owner only | owner only |
 | Transactions: read | members only | members only |
-| Transactions: create | — | members only; `creatorId` is the caller; expense and settlement contents are checked (AC-4) |
+| Transactions: create | — | members only; `creatorId` is the caller; expense and settlement contents are checked (AC-4); a settlement's caller must be its payer or its receiver (RC-9) |
 | Transactions: edit | creator only | creator only; creator and type cannot change; contents are checked |
 | Transactions: delete | creator only | creator, **or the group owner** (needed for FR 1.7) |
 | `users` | — | signed-in users can read profiles; each user creates only their own profile with a `@usc.edu` email matching their login and a 10-digit USC ID; only `name` can be updated |
@@ -439,7 +439,7 @@ of maps; with a plain list the rules can check that every participant is a membe
 | 3 | Register an account | <span class="tag chg">CHANGED</span> | Login created first; USC ID checked and reserved inside the transaction; rollback (AC-3); confirm password. |
 | 4 | Create an expense with a split preview | <span class="tag chg">CHANGED</span> | `init(groupId, null)` loads the group and members (DC-2); preview published as rows and a status. |
 | 5 | View the balance page | <span class="tag chg">CHANGED</span> | `loadBalances(groupId)` reloads the group first; balances sorted; reloads whenever the tab is shown. |
-| 6 | Record a settlement | <span class="tag chg">CHANGED</span> | Data loaded once in `init`; `amountOwed`; fresh re-check at save time (DC-7). |
+| 6 | Record a settlement | <span class="tag chg">CHANGED</span> | Data loaded once in `init`; `amountOwed`; fresh re-check at save time (DC-7); either side records it with "I paid" / "I was paid" (RC-9). |
 | 7 | Search, filter and sort the history | <span class="tag chg">CHANGED</span> | Members loaded for names and the member filter; `clearFilters()`; result count. |
 | 8 | Delete a group | <span class="tag new">NEW</span> | Batched deletion and the owner-delete rule (AC-4, DC-6). |
 | 9 | Remove a member or leave a group | <span class="tag new">NEW</span> | Settled-up check, then `arrayRemove`; new rules (AC-6, DC-9). |
@@ -484,7 +484,7 @@ of maps; with a plain list the rules can check that every participant is a membe
 No requirement from Project 2.1 was removed or postponed: FR 1.1 – FR 5.7 and NFR 1 – NFR 4 are
 all implemented (see Appendix A). The changes below clarify requirements that turned out to be
 underspecified when the forms were built (RC-1 to RC-9), followed by optional requirements that we
-added and implemented (RC-10, RC-11) and one we analysed for a later assignment (RC-12).
+added and implemented (RC-10, RC-11, RC-13) and one we analysed for a later assignment (RC-12).
 
 **RC-1 Password rules (FR 1.1).** Passwords must have at least 6 characters, and registration asks
 for the password twice.
@@ -536,10 +536,23 @@ creator.
 *Does it change the design?* Yes, in C6 only: one rule in `firestore.rules` (AC-4). No class
 changes.
 
-**RC-9 Only the member who owes records the settlement (FR 5.1).** The payer of a settlement is
-always the logged-in user, and the server rejects a settlement recorded on someone else's behalf.
-*Does it change the design?* No change to classes (it matches the 2.2 design); the rule is now
-also enforced on the server (AC-4).
+**RC-9 <span class="tag chg">CHANGED</span> Either side of a payment can record the settlement (FR 5.1).**
+FR 5.1 let only the member who owes money record a settlement. The customer's demo checklist asks
+for both a debtor-created and a recipient-created settlement, so the member who was paid can now
+record it too. The settlement form has "I paid" / "I was paid", and the balance page offers
+"Record payment" next to each member who owes the user, beside the existing "Settle up". The
+limit is unchanged: more than $0.00 and no more than what the payer currently owes the receiver.
+Only the member who recorded a settlement can edit or delete it, and nobody can record a payment
+between two other members.
+*Does it change the design?* Yes, in C1, C2, C3 and C6. `SettlementViewModel` keeps a direction
+(`setReceived`) and the other member (`selectOther`) instead of assuming the logged-in user paid,
+and `init` takes the preselected member and direction. `ReceiverOption` was renamed `MemberOption`
+because the other member may now be the payer. `InputValidator` gains a 3-argument
+`validateSettlement` for the receiver's wording. `SettlementFormActivity` gains the direction
+buttons, and `BalanceFragment` gains the "Record payment" shortcut. In `firestore.rules`, the
+settlement rule now requires the caller to be the payer or the receiver, where it used to require
+the payer (AC-4). `BalanceCalculator` and the data model did not change, because a settlement
+already stores both its payer and its receiver.
 
 **RC-10 (added, implemented) Remove members, leave a group, transfer ownership.** These were
 optional extensions in the customer description. The owner may remove a member or make another
@@ -568,6 +581,13 @@ refresh method.
 Function that reacts to new transactions), a device-token field in `users/{uid}`, and a
 notification permission request in C1. The existing components would otherwise be unchanged.
 
+**RC-13 (added, implemented) Case-sensitive search option (FR 5.6).** The customer's demo checklist
+asks teams to demonstrate case-sensitive keyword matching. History search still ignores case by
+default, and a "Match case" chip makes it exact, so "Pizza" and "pizza" find different records.
+*Does it change the design?* Slightly, in C1 to C3: `HistoryQuery` gains `matchCase`,
+`HistoryFilter` compares text exactly when it is set, `HistoryViewModel.setMatchCase` changes it,
+and `HistoryFragment` shows the chip. No other component is affected.
+
 <div class="wide" markdown="1">
 
 # Appendix A — Requirement traceability
@@ -585,7 +605,7 @@ notification permission request in C1. The existing components would otherwise b
 | FR 2.7 – 2.9 | Transaction details → Edit / Delete | `TransactionDetailActivity`, `TransactionDetailViewModel`, `TransactionRepository` | rules tests (creator-only edit and delete) |
 | FR 3.1 – 3.7 | Expense form preview | `SplitCalculator`, `ExpenseViewModel.recomputePreview` | `SplitCalculatorTest`, `BalanceCalculatorTest` |
 | FR 4.1 – 4.5 | Balances tab | `BalanceFragment`, `BalanceViewModel`, `BalanceCalculator` | `BalanceCalculatorTest` (customer examples) |
-| FR 5.1 – 5.3 | Settle up | `SettlementFormActivity`, `SettlementViewModel`, `InputValidator.validateSettlement` | `InputValidatorTest`, `BalanceCalculatorTest`, rules tests |
+| FR 5.1 – 5.3 | Settle up ("I paid" / "I was paid"); Record payment on the Balances tab | `SettlementFormActivity`, `SettlementViewModel`, `InputValidator.validateSettlement` | `InputValidatorTest`, `BalanceCalculatorTest`, rules tests (settlements recorded by either side) |
 | FR 5.4 – 5.6 | History tab | `HistoryFragment`, `HistoryViewModel`, `HistoryFilter` | `HistoryFilterTest` |
 | FR 5.7 | Summary tab | `SummaryFragment`, `SummaryViewModel`, `SummaryCalculator` | `SummaryCalculatorTest` |
 | NFR 1 | All data | Cloud Firestore (with its local cache) | Close and reopen the app |
@@ -593,7 +613,8 @@ notification permission request in C1. The existing components would otherwise b
 | NFR 3 | All screens | Screens reload when shown; pull to refresh; live updates (AC-5) | Two devices; emulator test with remote writes |
 | RC-10 (extension) | Members tab, group menu | `GroupViewModel.removeMember / leaveGroup / transferOwnership`, `GroupRepository` | rules tests (leave, remove, transfer); emulator end-to-end test |
 | RC-11 (extension) | Group list, every group tab | `Subscription`, `observe…` methods, `GroupViewModel.startLiveUpdates` | emulator end-to-end test |
-| NFR 4 | Server | Firebase Authentication (hashed passwords), `firestore.rules` | 22 rules tests |
+| RC-13 (extension) | History tab, Match case chip | `HistoryQuery.matchCase`, `HistoryFilter` | `HistoryFilterTest` |
+| NFR 4 | Server | Firebase Authentication (hashed passwords), `firestore.rules` | 29 rules tests |
 
 </div>
 
@@ -603,8 +624,8 @@ These go beyond the required features and do not replace any of them.
 
 1. **Home dashboard:** each group shows what you owe or are owed in it, plus overall totals.
 2. **"You lent / you borrowed"** on every history row, and who paid whom for settlements.
-3. **Settle-up shortcut** next to each debt on the balance page, and a **Pay the full amount**
-   button on the settlement form.
+3. **Settle-up and Record-payment shortcuts** next to each debt on the balance page, and a
+   **full amount** button on the settlement form.
 4. **Split helpers:** "Select all" participants, "Fill evenly" for exact and percentage splits,
    and live hints such as "$2.00 left to assign".
 5. **Share balances** as text through any messaging app.
@@ -619,13 +640,15 @@ These go beyond the required features and do not replace any of them.
     ownership, with a guard that nobody leaves while money is still owed.
 12. **Live updates** (RC-11): the group list, history, balances, summary and members update the
     moment another member makes a change, and a removed member's screen closes immediately.
+13. **Match case search** (RC-13): keyword search can be made case-sensitive.
 
 # Appendix C — Verification
 
 | Check | Scope | Result |
 |---|---|---|
-| Unit tests (`./gradlew test`) | `Money`, `SplitCalculator`, `BalanceCalculator`, `InputValidator`, `HistoryFilter`, `SummaryCalculator`, `DateProvider`, model — including every worked example in the customer description | 71 tests, all passing |
-| Security-rule tests (`firestore-tests/`, Firestore emulator) | Documents shaped exactly like the app writes them; members-only access, owner and creator permissions, locked fields, USC ID uniqueness, content validation, batched group deletion | 25 tests, all passing (including leave, remove and transfer ownership) |
+| Unit tests (`./gradlew test`) | `Money`, `SplitCalculator`, `BalanceCalculator`, `InputValidator`, `HistoryFilter`, `SummaryCalculator`, `DateProvider`, model — including every worked example in the customer description | 74 tests, all passing |
+| Security-rule tests (`firestore-tests/`, Firestore emulator) | Documents shaped exactly like the app writes them; members-only access, owner and creator permissions, locked fields, USC ID uniqueness, content validation, batched group deletion | 29 tests, all passing (including leave, remove and transfer ownership, and settlements recorded by either side) |
 | Full Gradle build | `./gradlew assembleDebug` with the real AndroidX, Material and Firebase libraries | Builds with no errors |
 | End-to-end test on an emulator | Android 15 emulator against the local Firebase Auth and Firestore emulators: registration (with every error case), login, profile, groups, members, equal and percentage splits with rounding, balances, settlements and their limits, history search, summary, remove / leave / transfer ownership, group deletion; live updates checked by writing to the database from outside the app | All passed |
+| Demo checklist run | Every item of the customer's Project 2.3 Demo Checklist, on an Android 15 emulator with the demo data from `npm run seed:emulator`, switching between the demo users | All passed |
 | Manual end-to-end test | The step-by-step script in `README.md` (section 4), using two devices to show that one member's changes reach the others | Carried out while recording the demo video |

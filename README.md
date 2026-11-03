@@ -9,8 +9,7 @@ Project 2.2 design: MVVM over Firebase Authentication + Cloud Firestore.
 
 | Document | Where |
 |---|---|
-| Project 2.3 implementation document (PDF for Brightspace) | [`docs/Team04_Project2.3_Implementation_Document.pdf`](docs/Team04_Project2.3_Implementation_Document.pdf) |
-| Same document, editable source | [`docs/implementation-document.md`](docs/implementation-document.md) |
+| Project 2.3 implementation document | [`docs/implementation-document.md`](docs/implementation-document.md) (the PDF is submitted on Brightspace; `docs/tools/` can rebuild one from this file) |
 | Revised diagrams (PlantUML sources + images) | [`docs/diagrams/`](docs/diagrams/) |
 | Firestore security rules | [`firestore.rules`](firestore.rules) |
 
