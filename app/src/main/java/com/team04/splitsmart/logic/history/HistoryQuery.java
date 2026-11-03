@@ -9,6 +9,7 @@ import com.team04.splitsmart.model.TransactionType;
  */
 public class HistoryQuery {
     private String keyword = "";
+    private boolean matchCase;
     private TransactionType typeFilter;
     private Category categoryFilter;
     private String memberFilter;
@@ -22,6 +23,7 @@ public class HistoryQuery {
     public HistoryQuery copy() {
         HistoryQuery copy = new HistoryQuery();
         copy.keyword = keyword;
+        copy.matchCase = matchCase;
         copy.typeFilter = typeFilter;
         copy.categoryFilter = categoryFilter;
         copy.memberFilter = memberFilter;
@@ -35,6 +37,15 @@ public class HistoryQuery {
 
     public void setKeyword(String keyword) {
         this.keyword = keyword == null ? "" : keyword.trim();
+    }
+
+    /** True when the keyword must match upper and lower case exactly ("Pizza" but not "pizza"). */
+    public boolean isMatchCase() {
+        return matchCase;
+    }
+
+    public void setMatchCase(boolean matchCase) {
+        this.matchCase = matchCase;
     }
 
     /** EXPENSE, SETTLEMENT, or {@code null} for both. */

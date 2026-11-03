@@ -285,11 +285,37 @@ describe('groups/{groupId}/transactions (FR 2.x, FR 5.x)', () => {
 
   test('the member who owes records a settlement to another member (FR 5.1, 5.2)', async () => {
     await assertSucceeds(setDoc(txDoc(as(ALICE), 's1'), settlement(ALICE, BOB, 500)));
-    // Cannot record a payment on behalf of someone else, to a non-member, to yourself, or of $0.
-    await assertFails(setDoc(txDoc(as(ALICE), 's2'), settlement(BOB, ALICE, 500, { creatorId: ALICE })));
+    // Cannot record a payment to a non-member, to yourself, of $0, or as somebody else.
     await assertFails(setDoc(txDoc(as(ALICE), 's3'), settlement(ALICE, CAROL, 500)));
     await assertFails(setDoc(txDoc(as(ALICE), 's4'), settlement(ALICE, ALICE, 500)));
     await assertFails(setDoc(txDoc(as(ALICE), 's5'), settlement(ALICE, BOB, 0)));
+    await assertFails(setDoc(txDoc(as(ALICE), 's6'), settlement(ALICE, BOB, 500, { creatorId: BOB })));
+  });
+
+  test('the member who was paid can record the settlement instead (demo checklist)', async () => {
+    await assertSucceeds(setDoc(txDoc(as(ALICE), 's1'), settlement(BOB, ALICE, 500, { creatorId: ALICE })));
+    // The payer must be a member too.
+    await assertFails(setDoc(txDoc(as(ALICE), 's2'), settlement(CAROL, ALICE, 500, { creatorId: ALICE })));
+  });
+
+  test('nobody can record a payment between two other members', async () => {
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB, CAROL])));
+    await assertFails(setDoc(txDoc(as(CAROL), 's1'), settlement(BOB, ALICE, 500, { creatorId: CAROL })));
+    await assertFails(setDoc(txDoc(as(CAROL), 's2'), settlement(ALICE, BOB, 500, { creatorId: CAROL })));
+  });
+
+  test('a member can record an expense they are not part of (demo checklist)', async () => {
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB, CAROL])));
+    await assertSucceeds(setDoc(txDoc(as(CAROL), 'e1'),
+      expense(CAROL, ALICE, [share(ALICE, 1500), share(BOB, 1500)])));
+  });
+
+  test('the creator of a receiver-recorded settlement can edit and delete it', async () => {
+    await seed((db) => setDoc(txDoc(db, 's1'), settlement(BOB, ALICE, 500, { creatorId: ALICE })));
+    await assertSucceeds(updateDoc(txDoc(as(ALICE), 's1'), { amountCents: 300, note: 'Cash' }));
+    await assertFails(updateDoc(txDoc(as(BOB), 's1'), { amountCents: 100 }));
+    await assertFails(deleteDoc(txDoc(as(BOB), 's1')));
+    await assertSucceeds(deleteDoc(txDoc(as(ALICE), 's1')));
   });
 
   test('only the creator can edit a transaction (FR 2.7, FR 5.3)', async () => {
