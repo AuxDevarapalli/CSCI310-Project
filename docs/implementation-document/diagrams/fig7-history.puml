@@ -1,0 +1,70 @@
+@startuml fig7-history
+!include style.iuml
+title Figure 7 (revises 2.2 Figure 7): Search, filter, and sort the history (FR 5.4 to 5.6; R6, R13)
+
+actor User
+participant ":HistoryFragment" as UI
+participant ":HistoryViewModel" as VM
+participant ":GroupRepository" as GR
+participant ":UserRepository" as UR
+participant ":TransactionRepository" as TR
+participant ":HistoryFilter" as F
+participant "db :\nFirebaseFirestore" as DB
+
+User -> UI : open History tab\n<b>(also on every return, pull to refresh</b>\n<b>or live update, Figure 10)</b>
+UI -> VM : load(groupId)
+VM -> GR : <b>getGroup(groupId, cb)</b>
+GR --> VM : <b>cb.onSuccess(group)</b>
+VM -> UR : <b>getUsers(group.memberIds, cb)</b>
+UR --> VM : <b>cb.onSuccess(users)</b>
+VM --> UI : <b>members, users (LiveData)</b>
+note right of VM
+  NEW: members are loaded first, for the names
+  on each row and the choices in the member filter
+end note
+VM -> TR : getTransactions(groupId, cb)
+TR -> DB : get groups/{groupId}/transactions
+DB --> TR : documents
+TR --> VM : cb.onSuccess(transactions)
+VM -> VM : all = transactions; <b>totalCount = all.size();</b>\n<b>applyQuery(query): the current query is kept</b>\n<b>(was query = HistoryQuery.defaults() on every load)</b>
+VM -> F : apply(all, query)
+F --> VM : newest first
+VM --> UI : visible (LiveData)<b>, totalCount, a copy of the query</b>
+UI --> User : expenses and settlements, settlements labeled "Settlement";\n<b>"You lent $X" / "You borrowed $X" on each row, "12 transactions"</b>
+opt <b>some transactions involve former members (D9)</b>
+  VM -> UR : <b>getUsers(missing, cb), where missing =</b>\n<b>FormerMembers.missingUserIds(transactions, known)</b>
+  UR --> VM : <b>cb.onSuccess(users)</b>
+  VM --> UI : <b>users, visible (LiveData): rows show their names</b>
+end
+loop each change to keyword, <b>Match case</b>, type, category, member, or sort order<b>, or Clear filters</b>
+  User -> UI : type a keyword, pick a filter, or toggle the sort;\n<b>tap Match case or Clear filters</b>
+  UI -> VM : setKeyword(keyword) / setTypeFilter(type) /\nsetCategoryFilter(category) / setMemberFilter(uid) /\n<b>toggleSortOrder() (was setSortOrder(o)) /</b>\n<b>setMatchCase(matchCase) / clearFilters()</b>
+  VM -> VM : update query; applyQuery(next)
+  note right of VM
+    NEW (R6): a category filter matches expenses only;
+    picking Settlements clears it, and picking a category
+    clears Settlements. clearFilters() keeps the sort
+    order and the Match case choice.
+  end note
+  VM -> F : apply(all, query)
+  F -> F : keep transactions matching keyword and every filter<b>;</b>\n<b>the keyword ignores case unless Match case</b>\n<b>is on, then the case must match (R13)</b>
+  F -> F : sort by createdAt\n(NEWEST_FIRST or OLDEST_FIRST)<b>;</b>\n<b>ties by date, then id</b>
+  F --> VM : results
+  VM --> UI : visible (LiveData)<b>, a copy of the query for the chips</b>\n<b>and the Clear filters button</b>
+  alt results are empty
+    UI --> User : <b>"Nothing matches", "Try a different keyword</b>\n<b>or clear the filters." (was an empty list)</b>
+  else results found
+    UI --> User : matching transactions<b>, "Showing 3 of 12"</b>\n<b>while a keyword or filter is on</b>
+  end
+end
+note over VM, F
+  Filtering runs on the list already loaded;
+  no database call is made
+end note
+User -> UI : tap a transaction
+UI --> User : open TransactionDetailActivity
+
+legend bottom left
+<b>Bold</b> messages and notes marked NEW or CHANGED are departures from Project 2.2; plain = unchanged.
+endlegend
+@enduml

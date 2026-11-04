@@ -1,0 +1,85 @@
+@startuml fig2d-repositories
+!pragma layout smetana
+!include style.iuml
+title Figure 2d (revises part of 2.2 Figure 2): C4 Repositories. All four use FirebaseFirestore, FirestoreMapper and FirebaseErrors (Figure 2e)
+
+package "C4 Repositories: com.team04.splitsmart.data" {
+  interface "DataCallback&#60;T&#62;" as DataCallback <<interface>> {
+    +onSuccess(value : T) : void
+    +onFailure(e : Exception) : void
+  }
+  note right of DataCallback
+    Unchanged. onFailure now always receives a
+    RepositoryException with a user-readable message.
+  end note
+  class AuthRepository {
+    -auth : FirebaseAuth
+    -db : FirebaseFirestore
+    <b>+{static} create() : AuthRepository (new)</b>
+    <b>+{static} isFirebaseConfigured(context) : boolean (new)</b>
+    <b>+register(name, email, uscId, password, nowMillis, callback) (changed)</b>
+    +login(email, password, callback : DataCallback<User>)
+    +logout() : void
+    <b>+getCurrentUserId() : String (was getCurrentUid)</b>
+    <b>+getCurrentUser(callback : DataCallback<User>) (new)</b>
+    +isLoggedIn() : boolean
+  }
+  class UserRepository {
+    -db : FirebaseFirestore
+    <b>+{static} create() : UserRepository (new)</b>
+    +getUser(uid, callback : DataCallback<User>)
+    +getUsers(uids, callback : DataCallback<List<User>>)
+    +findByEmail(email, callback : DataCallback<User>)
+    <b>+updateName(user, newName, callback : DataCallback<User>) (changed)</b>
+  }
+  class GroupRepository {
+    -db : FirebaseFirestore
+    {field} <b>-{static} MAX_BATCH_WRITES : int = 450 (new)</b>
+    <b>+{static} create() : GroupRepository (new)</b>
+    <b>+createGroup(name, description, ownerId, nowMillis, callback) (changed)</b>
+    +getGroupsForUser(uid, callback : DataCallback<List<Group>>)
+    +getGroup(groupId, callback : DataCallback<Group>)
+    +addMember(groupId, uid, callback : DataCallback<Void>)
+    +updateGroup(groupId, name, description, callback)
+    +deleteGroup(groupId, callback : DataCallback<Void>)
+    <b>+removeMember(groupId, uid, callback) (new)</b>
+    <b>+transferOwnership(groupId, newOwnerId, callback) (new)</b>
+    <b>+observeGroup(groupId, onChange) : Subscription (new)</b>
+    <b>+observeGroupsForUser(uid, onChange) : Subscription (new)</b>
+    <b>-commitDeletes(refs, start, callback) batches of 450 (new)</b>
+  }
+  class TransactionRepository {
+    -db : FirebaseFirestore
+    <b>+{static} create() : TransactionRepository (new)</b>
+    +getTransactions(groupId, callback : DataCallback<List<Transaction>>)
+    +getTransaction(groupId, transactionId, callback : DataCallback<Transaction>)
+    <b>+addExpense(expense : Expense, nowMillis, callback) (changed)</b>
+    <b>+updateExpense(expense : Expense, nowMillis, callback) (changed)</b>
+    <b>+addSettlement(settlement : Settlement, nowMillis, callback) (changed)</b>
+    <b>+updateSettlement(settlement : Settlement, nowMillis, callback) (changed)</b>
+    +deleteTransaction(groupId, transactionId, callback : DataCallback<Void>)
+    <b>+observeTransactions(groupId, onChange) : Subscription (new)</b>
+    <s><color:#888888>-toTransaction(doc) / -toMap(t) (moved to FirestoreMapper)</color></s>
+  }
+}
+
+package "C5 / C6 Firebase SDK" {
+  class FirebaseAuth <<Firebase SDK, C5>>
+  class FirebaseFirestore <<Firebase SDK, C6>>
+}
+
+UserRepository -[hidden]right- DataCallback
+UserRepository -[hidden]down- AuthRepository
+UserRepository -[hidden]down- GroupRepository
+DataCallback -[hidden]down- TransactionRepository
+AuthRepository -[hidden]right- GroupRepository
+GroupRepository -[hidden]right- TransactionRepository
+AuthRepository --> FirebaseAuth
+GroupRepository --> FirebaseFirestore
+TransactionRepository --> FirebaseFirestore
+FirebaseAuth -[hidden]right- FirebaseFirestore
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+endlegend
+@enduml
