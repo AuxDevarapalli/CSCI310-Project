@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.appbar.MaterialToolbar;
 import com.team04.splitsmart.R;
 import com.team04.splitsmart.logic.validation.Money;
 import com.team04.splitsmart.viewmodel.GroupListItem;
@@ -29,6 +28,7 @@ public class GroupListActivity extends BaseActivity {
     private View errorView;
     private TextView errorText;
     private View overallCard;
+    private TextView balanceStatus;
     private TextView overallToPay;
     private TextView overallToReceive;
 
@@ -42,14 +42,9 @@ public class GroupListActivity extends BaseActivity {
         viewModel = obtainViewModel(GroupListViewModel.class);
         String currentUid = viewModel.getCurrentUserId();
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
-                return true;
-            }
-            return false;
-        });
+        findViewById(R.id.action_profile).setOnClickListener(v ->
+                startActivity(new Intent(this, ProfileActivity.class)));
+        balanceStatus = findViewById(R.id.home_balance_status);
         refreshLayout = findViewById(R.id.groups_refresh);
         emptyView = findViewById(R.id.groups_empty);
         errorView = findViewById(R.id.groups_error);
@@ -98,7 +93,17 @@ public class GroupListActivity extends BaseActivity {
             UiUtils.setVisible(errorView, false);
         }
         UiUtils.setVisible(overallCard, !empty);
-        overallToPay.setText(Money.format(GroupListViewModel.totalToPay(items)));
-        overallToReceive.setText(Money.format(GroupListViewModel.totalToReceive(items)));
+        boolean loaded = !empty && items.stream().allMatch(GroupListItem::isBalanceLoaded);
+        long toPay = GroupListViewModel.totalToPay(items);
+        long toReceive = GroupListViewModel.totalToReceive(items);
+        int status = R.string.home_open_balances;
+        if (!loaded) {
+            status = R.string.home_balances_pending;
+        } else if (toPay == 0 && toReceive == 0) {
+            status = R.string.home_all_settled;
+        }
+        balanceStatus.setText(status);
+        overallToPay.setText(Money.format(toPay));
+        overallToReceive.setText(Money.format(toReceive));
     }
 }

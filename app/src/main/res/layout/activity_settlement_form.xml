@@ -50,30 +50,12 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <!-- FR 5.1: the user who paid is always the logged-in user. -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/settlement_payer_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_l"
-                android:enabled="false"
-                android:hint="@string/hint_paid_by"
-                app:startIconDrawable="@drawable/ic_person">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/settlement_payer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:enabled="false"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/settlement_receiver_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_m"
-                android:hint="@string/hint_paid_to"
+                android:hint="@string/hint_settle_with"
                 app:endIconDrawable="@drawable/ic_arrow_drop_down"
                 app:endIconMode="custom"
                 app:startIconDrawable="@drawable/ic_person">

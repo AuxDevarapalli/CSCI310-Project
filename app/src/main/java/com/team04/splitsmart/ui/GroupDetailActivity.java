@@ -2,6 +2,7 @@ package com.team04.splitsmart.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -158,6 +159,18 @@ public class GroupDetailActivity extends BaseActivity {
             return;
         }
         toolbar.setTitle(group.getName());
+        Bitmap bitmap = GroupPhoto.decode(group.getPhoto());
+        if (bitmap == null) {
+            toolbar.setLogo(null);
+        } else {
+            int size = Math.round(32 * getResources().getDisplayMetrics().density);
+            Bitmap icon = Bitmap.createScaledBitmap(bitmap, size, size, true);
+            icon.setDensity(Bitmap.DENSITY_NONE);
+            androidx.core.graphics.drawable.RoundedBitmapDrawable logo =
+                    androidx.core.graphics.drawable.RoundedBitmapDrawableFactory.create(getResources(), icon);
+            logo.setCircular(true);
+            toolbar.setLogo(logo);
+        }
         String members = getResources().getQuantityString(R.plurals.member_count,
                 group.getMemberCount(), group.getMemberCount());
         toolbar.setSubtitle(viewModel.isOwner()
