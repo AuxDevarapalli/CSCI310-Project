@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_horizontal"
+    android:importantForAccessibility="yes"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/space_s">
+
+    <com.team04.splitsmart.ui.TrendBar
+        android:id="@+id/trend_progress"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/trend_month"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:importantForAccessibility="no"
+        android:textAppearance="?attr/textAppearanceLabelMedium" />
+</LinearLayout>

@@ -87,6 +87,21 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/balance_settled_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                android:background="@drawable/bg_settled_badge"
+                android:accessibilityLiveRegion="polite"
+                android:drawablePadding="@dimen/space_s"
+                android:text="@string/balance_settled_banner"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="@color/amount_positive"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_settled"
+                app:drawableTint="@color/amount_positive" />
+
+            <TextView
                 style="@style/SplitSmart.SectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

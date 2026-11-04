@@ -84,6 +84,15 @@
             app:chipIcon="@drawable/ic_person" />
 
         <com.google.android.material.chip.Chip
+            android:id="@+id/chip_month"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_month"
+            app:chipIcon="@drawable/ic_calendar"
+            app:closeIcon="@drawable/ic_close" />
+
+        <com.google.android.material.chip.Chip
             android:id="@+id/chip_sort"
             style="@style/Widget.Material3.Chip.Assist"
             android:layout_width="wrap_content"
@@ -115,6 +124,16 @@
             android:layout_weight="1"
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/history_export"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/action_export_history"
+            android:enabled="false"
+            android:tooltipText="@string/action_export_history"
+            app:icon="@drawable/ic_download" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/history_clear_filters"

@@ -1,13 +1,21 @@
 package com.team04.splitsmart.ui;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
@@ -17,15 +25,20 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.team04.splitsmart.R;
 import com.team04.splitsmart.logic.history.HistoryQuery;
+import com.team04.splitsmart.logic.validation.DateProvider;
 import com.team04.splitsmart.model.Category;
 import com.team04.splitsmart.model.Transaction;
 import com.team04.splitsmart.model.TransactionType;
 import com.team04.splitsmart.model.User;
 import com.team04.splitsmart.viewmodel.HistoryViewModel;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +61,10 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
     private Chip sortChip;
     private Chip matchCaseChip;
     private RecyclerView list;
+    private Chip monthChip;
+    private MaterialButton exportButton;
+    private final ActivityResultLauncher<String> createCsv = registerForActivityResult(
+            new ActivityResultContracts.CreateDocument("text/csv"), this::finishExport);
     private TextView countText;
     private MaterialButton clearFiltersButton;
     private View emptyView;
@@ -86,6 +103,8 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         memberChip = view.findViewById(R.id.chip_member);
         sortChip = view.findViewById(R.id.chip_sort);
         matchCaseChip = view.findViewById(R.id.chip_match_case);
+        monthChip = view.findViewById(R.id.chip_month);
+        exportButton = view.findViewById(R.id.history_export);
         countText = view.findViewById(R.id.history_count);
         clearFiltersButton = view.findViewById(R.id.history_clear_filters);
         emptyView = view.findViewById(R.id.history_empty);
@@ -131,6 +150,9 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         categoryChip.setOnCloseIconClickListener(v -> viewModel.setCategoryFilter(null));
         memberChip.setOnClickListener(v -> showMemberMenu());
         memberChip.setOnCloseIconClickListener(v -> viewModel.setMemberFilter(null));
+        monthChip.setOnClickListener(v -> showMonthFilter());
+        monthChip.setOnCloseIconClickListener(v -> viewModel.setMonthFilter(null));
+        exportButton.setOnClickListener(v -> startExport());
         sortChip.setOnClickListener(v -> viewModel.toggleSortOrder());
         matchCaseChip.setOnCheckedChangeListener((chip, checked) -> {
             if (!renderingQuery) {
@@ -150,9 +172,12 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
             adapter.setUsers(users);
             renderQuery(viewModel.getQuery().getValue());
         });
-        viewModel.getLoading().observe(getViewLifecycleOwner(),
-                loading -> refreshLayout.setRefreshing(Boolean.TRUE.equals(loading)));
+        viewModel.getLoading().observe(getViewLifecycleOwner(), loading -> {
+            refreshLayout.setRefreshing(Boolean.TRUE.equals(loading));
+            updateExportButton();
+        });
         viewModel.getLoadError().observe(getViewLifecycleOwner(), error -> {
+            updateExportButton();
             boolean showError = error != null && adapter.getItemCount() == 0;
             UiUtils.setVisible(errorView, showError);
             errorText.setText(error);
@@ -180,6 +205,7 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
 
     private void renderList(List<Transaction> transactions) {
         UiUtils.submitKeepingTop(adapter, list, transactions);
+        updateExportButton();
         if (transactions == null) {
             return;
         }
@@ -211,6 +237,10 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
             return;
         }
         renderingQuery = true;
+        if (!UiUtils.textOf(searchInput).trim().equals(query.getKeyword())) {
+            searchInput.setText(query.getKeyword());
+            searchInput.setSelection(searchInput.length());
+        }
         int typeChip;
         if (query.getTypeFilter() == TransactionType.EXPENSE) {
             typeChip = R.id.chip_type_expenses;
@@ -234,12 +264,95 @@ public class HistoryFragment extends BaseFragment implements Refreshable {
         memberChip.setCloseIconVisible(member != null);
         memberChip.setCloseIconResource(R.drawable.ic_close);
 
+        String month = query.getMonthFilter();
+        monthChip.setText(month == null
+                ? getString(R.string.filter_month) : DateProvider.formatMonthLabel(month));
+        monthChip.setCloseIconVisible(month != null);
+
         sortChip.setText(query.getSortOrder().getDisplayName());
         if (matchCaseChip.isChecked() != query.isMatchCase()) {
             matchCaseChip.setChecked(query.isMatchCase());
         }
         UiUtils.setVisible(clearFiltersButton, query.isFiltered());
         renderingQuery = false;
+    }
+
+    private void showMonthFilter() {
+        List<String> months = viewModel.getAvailableMonths();
+        String selected = viewModel.getQuery().getValue().getMonthFilter();
+        String[] labels = new String[months.size() + 1];
+        labels[0] = getString(R.string.filter_all_months);
+        int checked = selected == null ? 0 : -1;
+        for (int i = 0; i < months.size(); i++) {
+            String month = months.get(i);
+            labels[i + 1] = DateProvider.formatMonthLabel(month);
+            if (month.equals(selected)) {
+                checked = i + 1;
+            }
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.filter_month_title)
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    viewModel.setMonthFilter(which == 0 ? null : months.get(which - 1));
+                    dialog.dismiss();
+                })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private void updateExportButton() {
+        if (getView() != null) {
+            exportButton.setEnabled(viewModel.canExport());
+        }
+    }
+
+    private void startExport() {
+        if (!viewModel.prepareExport(getString(R.string.history_export_unknown_member))) {
+            return;
+        }
+        updateExportButton();
+        String month = viewModel.getQuery().getValue().getMonthFilter();
+        String fileName = month == null ? "SplitSmart-history.csv" : "SplitSmart-" + month + ".csv";
+        try {
+            createCsv.launch(fileName);
+        } catch (ActivityNotFoundException e) {
+            viewModel.takeExport();
+            updateExportButton();
+            showMessage(getString(R.string.history_export_error));
+        }
+    }
+
+    private void finishExport(Uri destination) {
+        String csv = viewModel.takeExport();
+        updateExportButton();
+        if (destination == null) {
+            return;
+        }
+        if (csv == null) {
+            showMessage(getString(R.string.history_export_retry));
+            return;
+        }
+        Context context = requireContext().getApplicationContext();
+        new Thread(() -> {
+            int message = writeCsv(context, destination, csv)
+                    ? R.string.history_export_success : R.string.history_export_error;
+            new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+        }, "history-csv-export").start();
+    }
+
+    private static boolean writeCsv(Context context, Uri destination, String csv) {
+        try (OutputStream output = context.getContentResolver().openOutputStream(destination, "wt")) {
+            if (output == null) {
+                return false;
+            }
+            // UTF-8 signature helps spreadsheet applications recognize non-ASCII names.
+            output.write("﻿".getBytes(StandardCharsets.UTF_8));
+            output.write(csv.getBytes(StandardCharsets.UTF_8));
+            return true;
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
     }
 
     private String memberName(String uid) {

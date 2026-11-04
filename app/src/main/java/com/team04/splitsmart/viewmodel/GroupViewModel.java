@@ -217,10 +217,36 @@ public class GroupViewModel extends BaseViewModel {
                 });
     }
 
+    // Null leaves the saved photo alone. An empty draft explicitly removes it.
+    private final MutableLiveData<byte[]> photoDraft = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> preparingPhoto = new MutableLiveData<>(false);
+
+    public LiveData<byte[]> getPhotoDraft() {
+        return photoDraft;
+    }
+
+    public LiveData<Boolean> getPreparingPhoto() {
+        return preparingPhoto;
+    }
+
+    public void startPhotoPreparation() {
+        preparingPhoto.setValue(true);
+    }
+
+    public void finishPhotoPreparation(byte[] photo, String error) {
+        if (photo != null) {
+            photoDraft.setValue(photo);
+        }
+        preparingPhoto.setValue(false);
+        if (error != null) {
+            showError(error);
+        }
+    }
+
     /** FR 1.7: only the owner may change the name and description. */
     public void updateGroup(String name, String description) {
         Group current = group.getValue();
-        if (current == null || isLoading()) {
+        if (current == null || isLoading() || Boolean.TRUE.equals(preparingPhoto.getValue())) {
             return;
         }
         if (!isOwner()) {
@@ -233,13 +259,15 @@ public class GroupViewModel extends BaseViewModel {
         clearError();
         String newName = name.trim();
         String newDescription = trimOrEmpty(description);
+        byte[] photo = photoDraft.getValue();
         loading.setValue(true);
-        groupRepository.updateGroup(current.getId(), newName, newDescription,
+        groupRepository.updateGroup(current.getId(), newName, newDescription, photo,
                 new DataCallback<Void>() {
                     @Override
                     public void onSuccess(Void value) {
                         loading.setValue(false);
-                        group.setValue(current.withDetails(newName, newDescription));
+                        Group updated = current.withDetails(newName, newDescription);
+                        group.setValue(photo == null ? updated : updated.withPhoto(photo));
                         groupSaved.setValue(new Event<>(current.getId()));
                     }
 
