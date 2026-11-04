@@ -1,0 +1,103 @@
+@startuml fig2g-viewmodels-2
+!pragma layout smetana
+!include style.iuml
+title Figure 2g (revises part of 2.2 Figure 2): C2 ViewModels, part 2: transaction, balance, history and summary ViewModels and their state classes
+
+package "C2 ViewModels: com.team04.splitsmart.viewmodel" {
+  class ExpenseViewModel {
+    -group : Group, memberList : List<User>, editing : Expense [0..1]
+    -totalCents, payerId, participantIds, splitMethod, exactInputs, percentInputs
+    {field} <b>-rows : MutableLiveData<List<ParticipantRow>> (was previewShares)</b>
+    {field} <b>-splitStatus : MutableLiveData<SplitStatus> (was splitError)</b>
+    {field} <b>-ready, amountError, date, saved : MutableLiveData (new)</b>
+    <b>+init(groupId, expenseId) (was init(group, expenseId))</b>
+    +setTotal(text) / setPayer(uid) / setSplitMethod(newMethod) / setSplitInput(uid, text)
+    <b>+toggleParticipant(uid, checked : boolean) (changed)</b>
+    <b>+selectAllParticipants() / fillEvenly() (new)</b>
+    <b>+recomputePreview() : void (now public)</b>
+    +save(title, category, note) : void
+  }
+  class SettlementViewModel {
+    -group : Group, editing : Settlement [0..1]
+    {field} <b>-received : boolean (new)</b>
+    {field} <b>-otherId : String (was receiverId)</b>
+    {field} <b>-transactions : List<Transaction> (new)</b>
+    -owedCents : MutableLiveData<Long>, saved : MutableLiveData<Event<Boolean>>
+    <b>+getCurrentUser() : LiveData<User> / getOther() : LiveData<String> (new)</b>
+    <b>+getReceived() : LiveData<Boolean> / isReceived() : boolean (new)</b>
+    <b>+getOptions() : LiveData<List<MemberOption>> (new)</b>
+    +getOwedCents() : LiveData<Long>
+    <b>+init(groupId, settlementId, preselectedMember, preselectedReceived : Boolean) (changed)</b>
+    <b>+setReceived(value : boolean) : void (new)</b>
+    <b>+selectOther(uid) : void (was selectReceiver)</b>
+    <b>+save(amountText, note) re-reads transactions first (D7) (changed)</b>
+    <b>-owedFor(uid, receivedDirection : boolean) : long (new)</b>
+  }
+  class TransactionDetailViewModel {
+    -transaction : MutableLiveData<Transaction>
+    {field} <b>-users : MutableLiveData<Map<String, User>> (incl. former members) (new)</b>
+    {field} <b>-deleted : MutableLiveData<Event<Boolean>> (changed)</b>
+    +load(groupId, transactionId) : void
+    <b>+canEdit() : boolean (was canModify)</b>
+    <b>+deleteTransaction() : void (was delete)</b>
+  }
+  class ParticipantRow <<new>> {
+    -user : User, payer, currentUser, checked : boolean
+    -inputText : String, previewCents : Long, inputError : String
+  }
+  class SplitStatus <<new>> {
+    -message : String
+    -valid : boolean
+  }
+  class MemberOption <<new>> {
+    -user : User
+    -owedCents : long
+  }
+  class HistoryViewModel {
+    -all : List<Transaction>, query : HistoryQuery, visible : MutableLiveData
+    {field} <b>-totalCount, members, users : MutableLiveData (new)</b>
+    +load(groupId) : void
+    +setKeyword(keyword) / setTypeFilter(type) / setCategoryFilter(category)
+    +setMemberFilter(uid) / setSortOrder(order)
+    <b>+applyQuery(newQuery : HistoryQuery) (now public)</b>
+    <b>+toggleSortOrder() / clearFilters() (new)</b>
+    <b>+setMatchCase(matchCase : boolean) : void (new)</b>
+  }
+  class SummaryViewModel {
+    -summary : MutableLiveData<MonthlySummary>
+    {field} <b>-month, monthsWithExpenses : MutableLiveData (new)</b>
+    <b>+load(groupId) (was load(groupId, yearMonth))</b>
+    <b>+loadMonth(yearMonth) / previousMonth() / nextMonth() (new)</b>
+  }
+  class BalanceViewModel {
+    -summary : MutableLiveData<BalanceSummary>
+    {field} <b>-group : MutableLiveData<Group> (new)</b>
+    <b>+loadBalances(groupId) (was load(group))</b>
+    <b>-{static} sorted(summary) : BalanceSummary (new)</b>
+  }
+  class FormerMembers <<new>> {
+    ~{static} missingUserIds(transactions, knownIds) : List<String>
+  }
+  note bottom of SettlementViewModel
+    Either side of a payment can now record it (R9):
+    received is true when the other member paid the
+    logged-in user; otherId is the member on the other side.
+  end note
+}
+
+ExpenseViewModel -[hidden]right- SettlementViewModel
+SettlementViewModel -[hidden]right- TransactionDetailViewModel
+ExpenseViewModel ..> ParticipantRow : publishes
+ExpenseViewModel ..> SplitStatus : publishes
+SettlementViewModel ..> MemberOption : publishes
+ParticipantRow -[hidden]down- HistoryViewModel
+SplitStatus -[hidden]down- SummaryViewModel
+TransactionDetailViewModel -[hidden]down-- BalanceViewModel
+HistoryViewModel ..> FormerMembers
+SummaryViewModel -[hidden]down- FormerMembers
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+FormerMembers is also used by TransactionDetailViewModel.
+endlegend
+@enduml

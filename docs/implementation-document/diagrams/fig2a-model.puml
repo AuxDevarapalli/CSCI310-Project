@@ -1,0 +1,105 @@
+@startuml fig2a-model
+!pragma layout smetana
+!include style.iuml
+title Figure 2a (revises part of 2.2 Figure 2): C3 Business Logic and Model, domain model package. All classes are now immutable.
+
+package "C3 Business Logic and Model: com.team04.splitsmart.model" {
+  class User {
+    -uid : String
+    -name : String
+    -uscEmail : String
+    -uscId : String
+    +User(uid, name, uscEmail, uscId)
+    <s><color:#888888>+setName(name : String) : void (removed)</color></s>
+    <b>+withName(newName : String) : User (changed)</b>
+    <b>+getInitials() : String (new)</b>
+  }
+  class Group {
+    {field} <b>-id : String (changed)</b>
+    -name : String
+    -description : String
+    -ownerId : String
+    -memberIds : List<String>
+    -createdAt : long
+    +isOwner(uid : String) : boolean
+    +isMember(uid : String) : boolean
+    <b>+getMemberCount() : int (new)</b>
+    <s><color:#888888>+addMember(uid) / setName(name) / setDescription(text) (removed)</color></s>
+    <b>+withDetails(newName, newDescription) : Group (changed)</b>
+    <b>+withMember(uid : String) : Group (changed)</b>
+    <b>+withoutMember(uid : String) : Group (new)</b>
+    <b>+withOwner(newOwnerId : String) : Group (new)</b>
+  }
+  abstract class Transaction {
+    {field} <b>-id : String (changed)</b>
+    -groupId : String
+    -creatorId : String
+    -date : String
+    -createdAt : long
+    -note : String
+    +{abstract} getType() : TransactionType
+    +{abstract} getAmountCents() : long
+    <b>+{abstract} getInvolvedUserIds() : List<String> (new)</b>
+    +involves(uid : String) : boolean
+    +isCreatedBy(uid : String) : boolean
+    <b>+hasNote() : boolean (new)</b>
+    <s><color:#888888>+getDisplayTitle() : String (moved to UiUtils.titleOf)</color></s>
+  }
+  class Expense {
+    -title : String
+    -totalCents : long
+    -category : Category
+    -payerId : String
+    -splitMethod : SplitMethod
+    -shares : List<Share>
+    <b>+getShareFor(uid : String) : long (was getShareCents)</b>
+    +getParticipantIds() : List<String>
+    <b>+isParticipant(uid : String) : boolean (new)</b>
+    <b>+findShare(uid : String) : Share (new)</b>
+  }
+  class Settlement {
+    -payerId : String
+    -receiverId : String
+    -amountCents : long
+  }
+  class Share {
+    {field} <b>-participantId : String (was userId)</b>
+    -amountCents : long
+    -percentBasisPoints : int
+    +Share(participantId, amountCents)
+    <b>+Share(participantId, amountCents, percentBasisPoints) (new)</b>
+  }
+  enum Category <<enumeration>> {
+    FOOD
+    HOUSING
+    TRANSPORTATION
+    ENTERTAINMENT
+    OTHER
+    <b>+getDisplayName() / fromName(name) (new)</b>
+  }
+  enum SplitMethod <<enumeration>> {
+    EQUAL
+    EXACT
+    PERCENTAGE
+    <b>+getDisplayName() / fromName(name) (new)</b>
+  }
+  enum TransactionType <<enumeration>> {
+    EXPENSE
+    SETTLEMENT
+    <b>+getDisplayName() / fromName(name) (new)</b>
+  }
+}
+
+Group "1" o-- "0..*" Transaction : history
+Group --> "1..*" User : owner, members
+Transaction <|-- Expense
+Transaction <|-- Settlement
+Expense "1" *-- "2..*" Share : shares
+Expense ..> Category
+Expense ..> SplitMethod
+Transaction ..> TransactionType
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+endlegend
+@enduml

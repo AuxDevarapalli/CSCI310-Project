@@ -1,0 +1,91 @@
+@startuml fig2b-validation-split
+!pragma layout smetana
+!include style.iuml
+title Figure 2b (revises part of 2.2 Figure 2): C3 Business Logic and Model, validation and formatting (.logic.validation) and split engine (.logic.split)
+
+package "C3 Business Logic and Model: com.team04.splitsmart.logic.validation" {
+  class InputValidator {
+    {field} <b>+{static} MIN_PASSWORD_LENGTH = 6, MAX_NAME_LENGTH = 50 (new)</b>
+    {field} <b>+{static} MAX_GROUP_NAME_LENGTH = 50, MAX_DESCRIPTION_LENGTH = 200 (new)</b>
+    {field} <b>+{static} MAX_TITLE_LENGTH = 60, MAX_NOTE_LENGTH = 300 (new)</b>
+    -{static} EMAIL_LOCAL_PART : Pattern, USC_ID : Pattern
+    <b>+{static} normalizeEmail(email : String) : String (new)</b>
+    +validateRegistration(name, email, uscId, password) : ValidationResult
+    <b>+validateRegistration(name, email, uscId, password, confirmPassword) (new)</b>
+    +validateLogin(email, password) : ValidationResult
+    +validateName(name) : ValidationResult
+    +validateUscEmail(email) : ValidationResult
+    <b>+validateUscId(uscId) : ValidationResult (new)</b>
+    <b>+validatePassword(password) : ValidationResult (new)</b>
+    <b>+validateGroup(name, description) (was validateGroupName(name))</b>
+    <b>+validateNote(note) : ValidationResult (new)</b>
+    +validateExpense(expense : Expense, group : Group) : ValidationResult
+    +validateSettlement(amountCents, owedCents) : ValidationResult
+    <b>+validateSettlement(amountCents, owedCents, receivedByUser : boolean) (new)</b>
+  }
+  class ValidationResult {
+    -valid : boolean
+    {field} <b>-field : String (new)</b>
+    -errorMessage : String
+    {field} <b>+{static} FIELD_NAME, FIELD_EMAIL, FIELD_AMOUNT, ... : String (new)</b>
+    +{static} ok() : ValidationResult
+    +{static} error(errorMessage) : ValidationResult
+    <b>+{static} error(field, errorMessage) : ValidationResult (new)</b>
+    +isValid() : boolean
+    +getErrorMessage() : String
+    <b>+getField() : String (new)</b>
+  }
+  class DateProvider {
+    {field} <b>-clock : java.time.Clock (new)</b>
+    +DateProvider()
+    <b>+DateProvider(clock : Clock) (new)</b>
+    +today() : String
+    <b>+nowMillis() : long (was now())</b>
+    <b>+currentMonth() : String (new)</b>
+    <b>+{static} monthOf(date : String) : String (new)</b>
+    <b>+{static} shiftMonth(yearMonth, months) : String (new)</b>
+    <b>+{static} formatMonthLabel(yearMonth) : String (new)</b>
+  }
+  class Money <<utility>> {
+    {field} <b>+{static} MAX_CENTS : long = 100 000 000 ($1,000,000.00) (new)</b>
+    {field} <b>+{static} FULL_PERCENT_BASIS_POINTS : int = 10 000 (new)</b>
+    +{static} parseDollars(text : String) : long
+    +{static} parsePercent(text : String) : int
+    +{static} format(cents : long) : String
+    +{static} formatPercent(basisPoints : int) : String
+    <b>+{static} formatPlain(cents : long) : String (new)</b>
+    <b>+{static} formatPercentPlain(basisPoints : int) : String (new)</b>
+  }
+  class InvalidAmountException <<exception>> {
+    +InvalidAmountException(message : String)
+  }
+}
+
+package "C3 Business Logic and Model: com.team04.splitsmart.logic.split" {
+  class SplitCalculator {
+    +splitEqual(totalCents : long, participantIds : List<String>) : List<Share>
+    <b>+splitByPercent(totalCents, percentBasisPoints : LinkedHashMap<String, Integer>) (changed)</b>
+    +splitExact(amounts : LinkedHashMap<String, Long>) : List<Share>
+    +checkPercentages(percentBasisPoints : Map<String, Integer>) : ValidationResult
+    +checkSum(totalCents : long, shares : List<Share>) : ValidationResult
+    <b>+{static} sum(shares : List<Share>) : long (new)</b>
+    <s><color:#888888>-distributeRemainder(base : long[], remainder : long) (inlined)</color></s>
+  }
+  note bottom of SplitCalculator
+    FR 3.5 rounding is unchanged: shares round down, leftover cents go one at a
+    time from the first to the last participant. CHANGED: in a percentage split
+    a participant at 0% is skipped, so they never pay a rounding cent (R4).
+  end note
+}
+
+InputValidator .right.> ValidationResult : creates
+ValidationResult -[hidden]right- DateProvider
+InputValidator ..> Money
+Money .right.> InvalidAmountException : throws
+Money -[hidden]down- SplitCalculator
+SplitCalculator .up.> ValidationResult : creates
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+endlegend
+@enduml

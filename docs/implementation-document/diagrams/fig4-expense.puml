@@ -1,0 +1,89 @@
+@startuml fig4-expense
+!include style.iuml
+title Figure 4 (revises 2.2 Figure 4): Create an expense with a split preview (FR 2.1 to 2.6, 2.9, 3.1 to 3.7; D2, D3)
+
+actor User
+participant ":ExpenseFormActivity" as UI
+participant ":ExpenseViewModel" as VM
+participant ":GroupRepository" as GR
+participant ":UserRepository" as UR
+participant "Money" as M
+participant ":SplitCalculator" as SC
+participant ":InputValidator" as V
+participant ":DateProvider" as D
+participant ":TransactionRepository" as TR
+participant "db :\nFirebaseFirestore" as DB
+
+User -> UI : tap Add expense
+UI -> VM : <b>init(groupId, null)</b>
+VM -> GR : <b>getGroup(groupId, cb)</b>
+VM -> UR : <b>getUsers(group.memberIds, cb)</b>
+note right of VM
+  category chip = OTHER,
+  payer = current user, preselected
+  as a participant (cannot be unchecked)
+end note
+
+loop each change to total, payer, participants, split method or a share input
+  User -> UI : edit a field
+  UI -> VM : setTotal(text) / setPayer(uid) /\ntoggleParticipant(uid, <b>checked</b>) /\nsetSplitMethod(m) / setSplitInput(uid, text)
+  VM -> M : parseDollars(text) <b>(setTotal only)</b>
+  M --> VM : <b>totalCents</b> (or InvalidAmountException)
+  VM -> VM : recomputePreview()
+  note right of VM
+    CHANGED: recomputePreview() parses each share input itself
+    (a bad entry is flagged on its own row), and checkPercentages /
+    checkSum run only once every selected participant has a valid
+    entry; an equal split needs no checkSum
+  end note
+  alt splitMethod == EQUAL
+    VM -> SC : splitEqual(totalCents, ids)
+  else splitMethod == PERCENTAGE
+    VM -> M : <b>parsePercent(text) for each participant</b>
+    VM -> SC : splitByPercent(totalCents, <b>percents : LinkedHashMap</b>)
+    VM -> SC : checkPercentages(percents)
+    VM -> SC : checkSum(totalCents, shares)
+  else splitMethod == EXACT
+    VM -> M : <b>parseDollars(text) for each participant</b>
+    VM -> SC : splitExact(<b>amounts : LinkedHashMap</b>)
+    VM -> SC : checkSum(totalCents, shares)
+  end
+  SC --> VM : shares, results
+  VM --> UI : <b>splitStatus : SplitStatus</b> and <b>rows : List<ParticipantRow></b> (LiveData)
+  UI --> User : each participant's share and e.g.\n"Amounts add up to $28.00, not $30.00 <b>($2.00 left to assign)</b>"
+end
+
+User -> UI : enter title, pick category, note; tap Save
+UI -> VM : save(title, category, note)
+VM -> VM : <b>recomputePreview()</b>
+note right of VM
+  CHANGED: save() checks the title and total, re-runs the
+  preview and stops unless the split is valid, all before
+  the expense is built (2.2 checked the split only after
+  validateExpense)
+end note
+break title or total missing, fewer than two participants, or split not valid
+  VM --> UI : <b>fieldError (LiveData)</b>
+  UI --> User : error shown on the field (for the split: a message\nand a scroll to the preview), nothing saved
+end
+VM -> D : today(), <b>nowMillis()</b>
+D --> VM : "YYYY-MM-DD", time
+VM -> VM : expense = new Expense(...)
+VM -> V : validateExpense(expense, group)
+V --> VM : result
+alt result not valid
+  VM --> UI : <b>fieldError (LiveData)</b>
+  UI --> User : error shown on the field, nothing saved
+else valid
+  VM -> TR : addExpense(expense, <b>nowMillis</b>, cb)
+  TR -> DB : set groups/{groupId}/transactions/{newId}
+  DB --> TR : ok
+  TR --> VM : cb.onSuccess(id)
+  VM --> UI : <b>saved (Event)</b>
+  UI --> User : form closes; history, balances and\nsummary reload when shown (FR 2.9)
+end
+
+legend bottom left
+<b>Bold</b> messages and notes marked NEW or CHANGED are departures from Project 2.2; plain = unchanged.
+endlegend
+@enduml

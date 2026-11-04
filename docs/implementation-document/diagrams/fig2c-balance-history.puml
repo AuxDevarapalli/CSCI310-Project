@@ -1,0 +1,84 @@
+@startuml fig2c-balance-history
+!pragma layout smetana
+!include style.iuml
+skinparam nodesep 60
+title Figure 2c (revises part of 2.2 Figure 2): C3 Business Logic and Model, balance engine (.logic.balance) and history and summary engine (.logic.history)
+
+package "C3 Business Logic and Model: com.team04.splitsmart.logic.balance" {
+  class BalanceCalculator {
+    +computeSummary(uid, members : List<User>, transactions) : BalanceSummary
+    +netBetween(uid, otherUid, transactions : List<? extends Transaction>) : long
+    <b>+amountOwed(debtorUid, creditorUid, transactions) : long (new)</b>
+    <b>+computeTotals(uid, memberIds : List<String>, transactions) : long[2] (new)</b>
+    <s><color:#888888>-contribution(t : Transaction, uid, otherUid) : long (inlined)</color></s>
+  }
+  class BalanceSummary {
+    -pairs : List<PairBalance>
+    -totalToPayCents : long
+    -totalToReceiveCents : long
+    +getPairs() : List<PairBalance>
+    <b>+isAllSettled() : boolean (new)</b>
+  }
+  class PairBalance {
+    {field} <b>-otherUser : User (was otherUserId + otherUserName)</b>
+    -netCents : long
+    +getOtherUserId() : String
+    +isSettled() : boolean
+    +currentUserOwes() : boolean
+    <b>+owesCurrentUser() : boolean (new)</b>
+    <b>+getAbsoluteCents() : long (new)</b>
+  }
+}
+
+package "C3 Business Logic and Model: com.team04.splitsmart.logic.history" {
+  class HistoryFilter {
+    +apply(all : List<? extends Transaction>, query : HistoryQuery) : List<Transaction>
+    <b>+sort(transactions : List<Transaction>, order : SortOrder) : void (new)</b>
+    <b>-matches(transaction, query, keyword) : boolean (was matchesFilters + comparatorFor)</b>
+    <b>-matchesKeyword(transaction, keyword, matchCase : boolean) : boolean (changed)</b>
+    <b>-{static} contains(text, keyword, matchCase) : boolean (new)</b>
+  }
+  class HistoryQuery {
+    -keyword : String
+    {field} <b>-matchCase : boolean (new)</b>
+    {field} <b>-typeFilter : TransactionType [0..1] (was type)</b>
+    {field} <b>-categoryFilter : Category [0..1] (was category)</b>
+    {field} <b>-memberFilter : String [0..1] (was memberId)</b>
+    -sortOrder : SortOrder
+    +{static} defaults() : HistoryQuery
+    <b>+copy() : HistoryQuery (new)</b>
+    <b>+isFiltered() : boolean (new)</b>
+    <b>+isMatchCase() : boolean / setMatchCase(matchCase : boolean) (new)</b>
+  }
+  enum SortOrder <<enumeration>> {
+    NEWEST_FIRST
+    OLDEST_FIRST
+    <b>+toggled() : SortOrder (new)</b>
+    <b>+getDisplayName() : String (new)</b>
+  }
+  class SummaryCalculator {
+    <b>+calculate(transactions, yearMonth : String) : MonthlySummary (was monthly)</b>
+    <b>+monthsWithExpenses(transactions) : List<String> (new)</b>
+  }
+  class MonthlySummary {
+    -yearMonth : String
+    -expenseCount : int
+    -totalCents : long
+    -categoryTotals : Map<Category, Long>
+    <b>+getCategoryTotal(category : Category) : long (new)</b>
+    <b>+isEmpty() : boolean (new)</b>
+  }
+}
+
+BalanceCalculator ..> BalanceSummary : creates
+BalanceSummary "1" *-right- "0..*" PairBalance : pairs
+BalanceCalculator -[hidden]right- HistoryFilter
+HistoryFilter .right.> HistoryQuery
+HistoryQuery --> SortOrder
+HistoryFilter -[hidden]down- SummaryCalculator
+SummaryCalculator ..> MonthlySummary : creates
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+endlegend
+@enduml

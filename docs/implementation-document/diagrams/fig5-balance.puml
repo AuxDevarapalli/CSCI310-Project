@@ -1,0 +1,85 @@
+@startuml fig5-balance
+!include style.iuml
+title Figure 5 (revises 2.2 Figure 5): View the balance page (FR 4.1 to 4.5)
+
+actor User
+participant ":BalanceFragment" as UI
+participant ":SettlementFormActivity" as SF
+participant ":BalanceViewModel" as VM
+participant ":GroupRepository" as GR
+participant ":TransactionRepository" as TR
+participant ":UserRepository" as UR
+participant ":BalanceCalculator" as BC
+participant "Money" as M
+participant "db :\nFirebaseFirestore" as DB
+
+User -> UI : open the Balances tab, <b>come back to it</b>,\nor pull to refresh
+UI -> UI : <b>refresh()</b>
+note right of UI
+  NEW: onResume() calls refresh(), so the tab
+  reloads every time it is shown; pull to refresh,
+  Retry, the Refresh menu and live updates (A5)
+  call it too
+end note
+UI -> VM : <b>loadBalances(groupId)</b>
+VM -> GR : <b>getGroup(groupId, cb)</b>
+GR -> DB : <b>get groups/{groupId}</b>
+DB --> GR : <b>snapshot</b>
+GR --> VM : <b>cb.onSuccess(group)</b>
+note right of VM
+  CHANGED: loadBalances(groupId) replaces load(group) (D2)
+  and reloads the group first, so members added or
+  removed since the last visit are shown correctly
+end note
+VM -> TR : getTransactions(groupId, cb)
+TR -> DB : get groups/{groupId}/transactions
+alt load fails
+  DB --> TR : error
+  TR --> VM : cb.onFailure(e)
+  VM --> UI : <b>loadError (LiveData)</b>
+  UI --> User : error message with Retry
+  note right of VM
+    NEW: a failed getGroup() or getUsers() ends the
+    same way, e.g. "This group no longer exists."
+  end note
+else load succeeds
+  DB --> TR : documents
+  TR --> VM : cb.onSuccess(transactions)
+  VM -> UR : getUsers(group.memberIds, cb)
+  UR -> DB : get users/{uid} for each member
+  DB --> UR : documents
+  UR --> VM : cb.onSuccess(members)
+  VM -> BC : computeSummary(uid, members, transactions)
+  loop each other member m
+    BC -> BC : net = netBetween(uid, m.uid,\ntransactions)
+    note right of BC
+      expenses and settlements between
+      the two users only; never merged
+      across other pairs (FR 4.4)
+    end note
+  end
+  BC -> BC : totalToPay = sum of -net where net < 0;\ntotalToReceive = sum of net where net > 0
+  BC --> VM : summary
+  VM -> VM : <b>sorted(summary): open balances first,</b>\n<b>largest first, then by name</b>
+  VM --> UI : summary (LiveData)
+  UI -> M : format(cents) for each amount
+  M --> UI : "$10.00"
+  UI --> User : "Bob owes you $10.00" <b>+ Record payment</b>,\n"You owe David $4.00" <b>+ Settle up</b>,\nTotal to pay, Total to receive
+end
+
+opt tap the button on an open balance row (R9)
+  User -> UI : <b>tap Record payment (Bob owes you)</b>\n<b>or Settle up (you owe David)</b>
+  create SF
+  UI -> SF : <b>startActivity(newReceivedIntent(ctx, groupId, bob)</b>\n<b>or newCreateIntent(ctx, groupId, david))</b>
+  note over SF
+    NEW (R9): the settlement form (Figure 6)
+    opens with that member and direction
+    preselected: "I was paid" for Record
+    payment, "I paid" for Settle up
+  end note
+end
+
+legend bottom left
+<b>Bold</b> messages and notes marked NEW or CHANGED are departures from Project 2.2; plain = unchanged.
+endlegend
+@enduml
