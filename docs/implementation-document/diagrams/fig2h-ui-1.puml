@@ -1,0 +1,111 @@
+@startuml fig2h-ui-1
+!pragma layout smetana
+!include style.iuml
+title Figure 2h (revises part of 2.2 Figure 2): C1 UI Views, part 1: activities and ConfirmDialog (every activity extends BaseActivity)
+
+package "C1 UI Views: com.team04.splitsmart.ui" {
+  abstract class BaseActivity <<new>> {
+    #ensureSignedIn() : boolean
+    #setContentWithInsets(layout : int) : void
+    #obtainViewModel(type : Class<T>) : T
+    #showMessage(message : String) : void
+    #observeMessages(viewModel : BaseViewModel) : void
+  }
+  class LoginActivity {
+    -viewModel : AuthViewModel
+    -onLoginClick() / openGroups()
+  }
+  class RegisterActivity {
+    {field} <b>-confirmInput : TextInputEditText (new)</b>
+    -viewModel : AuthViewModel
+    -onRegisterClick() : void
+  }
+  class GroupListActivity {
+    {field} <b>-adapter : GroupAdapter (now a top-level class)</b>
+    {field} <b>-list : RecyclerView (new)</b>
+    -viewModel : GroupListViewModel
+    #onResume() : void
+    <b>-render(items : List<GroupListItem>) (changed)</b>
+  }
+  class ProfileActivity {
+    -viewModel : ProfileViewModel
+    <b>-saveName() (was onSaveNameClicked)</b>
+  }
+  class GroupFormActivity {
+    -groupId : String [0..1]
+    {field} <b>-viewModel : GroupViewModel (was two ViewModels)</b>
+    <b>+{static} newCreateIntent(ctx) / newEditIntent(ctx, groupId) : Intent (new)</b>
+  }
+  class GroupDetailActivity {
+    {field} <b>+{static} TAB_HISTORY, TAB_BALANCES, TAB_SUMMARY, TAB_MEMBERS : int (changed)</b>
+    {field} <b>+{static} TAB_COUNT : int = 4 (was 3 tabs)</b>
+    {field} <s><color:#888888>-memberList : RecyclerView (moved to MembersFragment)</color></s>
+    -viewModel : GroupViewModel
+    <b>+{static} newIntent(ctx, groupId [, startTab, justCreated]) : Intent (new)</b>
+    -renderGroup(group) / confirmDelete()
+    <b>-confirmLeave() / refreshAll() (new)</b>
+    <s><color:#888888>-showAddMemberDialog() (moved to MembersFragment)</color></s>
+  }
+  class ExpenseFormActivity {
+    {field} <b>-categoryGroup : ChipGroup (was Spinner)</b>
+    {field} <b>-payerInput : TextInputEditText + picker dialog (was Spinner)</b>
+    {field} <b>-splitGroup : MaterialButtonToggleGroup (was RadioGroup)</b>
+    {field} <b>-participantViews : Map<String, ParticipantViews> (changed)</b>
+    -viewModel : ExpenseViewModel
+    <b>+{static} newCreateIntent(ctx, groupId) : Intent (new)</b>
+    <b>+{static} newEditIntent(ctx, groupId, expenseId) : Intent (new)</b>
+    <b>-renderRows(rows) / renderStatus(status) (was renderPreview)</b>
+    <b>-showPayerPicker() : void (new)</b>
+  }
+  class SettlementFormActivity {
+    {field} <b>-directionGroup : MaterialButtonToggleGroup (R9) (new)</b>
+    {field} <b>-receiverInput : TextInputEditText (was Spinner)</b>
+    {field} <b>-payerInput : TextInputEditText (new)</b>
+    {field} <b>-fullAmountChip : Chip (new)</b>
+    -viewModel : SettlementViewModel
+    <b>+{static} newCreateIntent(ctx, groupId, receiverId) : Intent (new)</b>
+    <b>+{static} newReceivedIntent(ctx, groupId, payerId) : Intent (R9) (new)</b>
+    <b>+{static} newEditIntent(ctx, groupId, settlementId) : Intent (new)</b>
+    <b>-renderDirection(value) / renderNames() (new)</b>
+    <b>-renderOwed(owedCents) / showMemberPicker() (new)</b>
+  }
+  class TransactionDetailActivity {
+    -viewModel : TransactionDetailViewModel
+    <b>+{static} newIntent(ctx, groupId, transactionId) : Intent (new)</b>
+    <b>-render() / renderExpense(expense, users, me) (changed)</b>
+    <b>-renderSettlement(settlement, users, me) (changed)</b>
+    -openEditor() / confirmDelete()
+  }
+  class GroupPagerAdapter <<new>> {
+    +createFragment(position) : Fragment
+    +getItemCount() : int = 4
+  }
+  class ConfirmDialog {
+    <b>+ConfirmDialog(ctx, title, message, confirmLabel, onConfirm) (changed)</b>
+    +show() : void
+    <s><color:#888888>+{static} show(context, message, onConfirm) (removed)</color></s>
+  }
+  note bottom of SettlementFormActivity
+    directionGroup: "I paid" / "I was paid" (R9). The member
+    picker opens on the side that is not the logged-in user.
+  end note
+}
+
+BaseActivity <|-- LoginActivity
+BaseActivity <|-- RegisterActivity
+BaseActivity <|-- GroupListActivity
+LoginActivity -[hidden]- GroupDetailActivity
+RegisterActivity -[hidden]- GroupFormActivity
+GroupListActivity -[hidden]- ProfileActivity
+GroupDetailActivity *-- GroupPagerAdapter : 4 tabs
+GroupDetailActivity ...> ExpenseFormActivity : <b>Add expense button (new)</b>
+GroupDetailActivity ...> SettlementFormActivity : <b>Settle up button (new)</b>
+GroupDetailActivity ..> ConfirmDialog
+ProfileActivity ..> ConfirmDialog
+ConfirmDialog <.. TransactionDetailActivity
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+GroupDetailActivity owns the GroupPagerAdapter.
+endlegend
+@enduml

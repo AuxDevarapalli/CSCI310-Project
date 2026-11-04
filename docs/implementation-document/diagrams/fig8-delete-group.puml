@@ -1,0 +1,42 @@
+@startuml fig8-delete-group
+!include style.iuml
+title Figure 8 (new): Delete a group with all of its expenses and settlements (FR 1.7; A4, D6)
+
+actor Owner
+participant ":GroupDetailActivity" as UI
+participant ":ConfirmDialog" as CD
+participant ":GroupViewModel" as VM
+participant ":GroupRepository" as GR
+participant "db : FirebaseFirestore\n(+ security rules)" as DB
+
+Owner -> UI : menu → Delete group\n(only visible to the owner)
+UI -> CD : show()
+alt Owner taps Cancel
+  CD --> UI : nothing happens
+else Owner confirms
+  CD -> VM : deleteGroup()
+  VM -> VM : isOwner()? (re-checked before the write)
+  VM -> GR : deleteGroup(groupId, cb)
+  GR -> DB : get groups/{groupId}/transactions
+  DB --> GR : documents
+  GR -> GR : refs = every transaction, then groups/{groupId} last
+  loop batches of at most 450 writes, committed one after another
+    GR -> DB : WriteBatch.delete(ref) for each ref in the batch; commit()\n(the last batch also deletes groups/{groupId})
+    note right of DB
+      CHANGED rules: besides each transaction's creator,
+      the group owner may delete transactions, otherwise
+      a group holding other members' expenses could
+      never be deleted (FR 1.7 vs FR 2.7). The owner check
+      reads groups/{groupId}, so that document goes last.
+    end note
+    DB --> GR : ok
+  end
+  GR --> VM : cb.onSuccess(null)
+  VM --> UI : groupDeleted (Event)
+  UI --> Owner : "Group deleted", back to the group list
+end
+
+legend bottom left
+New interaction (not in Project 2.2).
+endlegend
+@enduml

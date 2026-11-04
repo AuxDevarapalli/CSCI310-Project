@@ -1,0 +1,49 @@
+@startuml fig10-live-updates
+!include style.iuml
+title Figure 10 (new): Live updates when another member changes the group (NFR 3, R11; A5)
+
+actor "Member B\n(this phone)" as B
+participant ":GroupDetailActivity" as UI
+participant ":GroupViewModel" as VM
+participant ":GroupRepository" as GR
+participant ":TransactionRepository" as TR
+participant ":Subscription" as SUB
+participant "db : FirebaseFirestore" as DB
+actor "Member A\n(another phone)" as A
+
+B -> UI : open a group
+UI -> VM : startLiveUpdates(groupId)
+VM -> GR : observeGroup(groupId, onChange)
+GR -> DB : groups/{groupId}: addSnapshotListener(\nchangesOnly(DocumentSnapshot::getMetadata, onChange))
+GR --> VM : Subscription
+VM -> TR : observeTransactions(groupId, onChange)
+TR -> DB : groups/{groupId}/transactions: addSnapshotListener(\nchangesOnly(QuerySnapshot::getMetadata, onChange))
+TR --> VM : Subscription
+note right of VM
+  onChange is the ViewModel's Runnable changed =
+  () -> remoteChange.setValue(new Event<>(true)), the same
+  for both listeners; the group listener covers renames,
+  member changes and deletion
+end note
+DB --> SUB : first snapshot of each listener (already shown) → ignored
+...
+A -> DB : adds / edits / deletes an expense or settlement\n(or renames the group, changes its members, deletes it)
+DB --> SUB : new snapshot (no pending local writes)
+SUB -> VM : onChange.run()
+note right of SUB
+  a listener error (for example access lost
+  after being removed) also runs onChange
+end note
+VM --> UI : remoteChange (Event)
+UI -> UI : refreshAll(): load(groupId), then refresh() on every\ncreated tab; each reloads and recomputes history,\nbalances, summary and members (C3 unchanged)
+UI --> B : updated screen without pulling to refresh
+...
+B -> UI : leave the screen
+UI -> VM : onCleared() (when the activity finishes)
+VM -> SUB : remove() on both subscriptions
+SUB -> DB : ListenerRegistration.remove()
+
+legend bottom left
+New interaction (not in Project 2.2).
+endlegend
+@enduml
