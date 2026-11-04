@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,8 +27,7 @@ import com.team04.splitsmart.viewmodel.SettlementViewModel;
 import java.util.List;
 
 /**
- * Record or edit a settlement: a payment the user made to another member outside the app
- * (FR 5.1 to FR 5.3, design Figure 6). The amount cannot exceed what the user owes.
+ * Record or edit a payment between the user and another member (FR 5.1 to FR 5.3).
  */
 public class SettlementFormActivity extends BaseActivity {
     private static final String EXTRA_GROUP_ID = "groupId";
@@ -91,7 +91,6 @@ public class SettlementFormActivity extends BaseActivity {
         owedText = findViewById(R.id.settlement_owed_text);
         fullAmountChip = findViewById(R.id.settlement_full_amount);
         saveButton = findViewById(R.id.settlement_save_button);
-        TextInputEditText payerInput = findViewById(R.id.settlement_payer);
         TextView dateText = findViewById(R.id.settlement_date);
         TextView loadErrorText = findViewById(R.id.settlement_load_error);
         ScrollView scrollView = findViewById(R.id.settlement_scroll);
@@ -130,12 +129,7 @@ public class SettlementFormActivity extends BaseActivity {
             UiUtils.setVisible(progress, busy);
             renderOwed(viewModel.getOwedCents().getValue());
         });
-        viewModel.getPayer().observe(this, payer -> {
-            if (payer != null) {
-                payerInput.setText(getString(R.string.member_you, payer.getName()));
-            }
-        });
-        viewModel.getReceiver().observe(this, uid -> receiverInput.setText(receiverName(uid)));
+        viewModel.getCounterparty().observe(this, uid -> receiverInput.setText(receiverName(uid)));
         viewModel.getOwedCents().observe(this, this::renderOwed);
         viewModel.getExistingSettlement().observe(this, this::prefill);
         viewModel.getDate().observe(this,
@@ -143,6 +137,8 @@ public class SettlementFormActivity extends BaseActivity {
         viewModel.getFieldError().observe(this, this::showFieldError);
         viewModel.getSaved().observe(this, event -> {
             if (event.getContentIfNotHandled() != null) {
+                Toast.makeText(this, editing ? R.string.settlement_updated
+                        : R.string.settlement_recorded, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             }
@@ -169,7 +165,7 @@ public class SettlementFormActivity extends BaseActivity {
 
     /** Explains how much is owed; saving is only possible when something is owed (FR 5.2). */
     private void renderOwed(Long owedCents) {
-        String receiverId = viewModel.getReceiver().getValue();
+        String receiverId = viewModel.getCounterparty().getValue();
         boolean canSave;
         if (receiverId == null) {
             owedText.setText(hasAnyDebt()
@@ -181,7 +177,9 @@ public class SettlementFormActivity extends BaseActivity {
             long owed = owedCents == null ? 0 : owedCents;
             String name = receiverName(receiverId);
             if (owed > 0) {
-                owedText.setText(getString(R.string.settlement_you_owe, name, Money.format(owed)));
+                owedText.setText(getString(Boolean.TRUE.equals(viewModel.getIncoming().getValue())
+                        ? R.string.settlement_they_owe : R.string.settlement_you_owe,
+                        name, Money.format(owed)));
                 amountLayout.setHelperText(getString(R.string.settlement_up_to, Money.format(owed)));
             } else {
                 owedText.setText(getString(R.string.settlement_owe_nothing, name));
@@ -197,7 +195,7 @@ public class SettlementFormActivity extends BaseActivity {
         List<ReceiverOption> options = viewModel.getReceivers().getValue();
         if (options != null) {
             for (ReceiverOption option : options) {
-                if (option.getOwedCents() > 0) {
+                if (option.getNetCents() != 0) {
                     return true;
                 }
             }
@@ -219,18 +217,22 @@ public class SettlementFormActivity extends BaseActivity {
 
     private void showReceiverPicker() {
         List<ReceiverOption> options = viewModel.getReceivers().getValue();
+        if (busy) {
+            return;
+        }
         if (options == null || options.isEmpty()) {
             showMessage(getString(R.string.settlement_no_other_members));
             return;
         }
-        String current = viewModel.getReceiver().getValue();
+        String current = viewModel.getCounterparty().getValue();
         String[] labels = new String[options.size()];
         int checked = -1;
         for (int i = 0; i < options.size(); i++) {
             ReceiverOption option = options.get(i);
-            labels[i] = option.getOwedCents() > 0
-                    ? getString(R.string.settlement_option_owed, option.getUser().getName(),
-                    Money.format(option.getOwedCents()))
+            labels[i] = option.getNetCents() != 0
+                    ? getString(option.getNetCents() > 0
+                            ? R.string.settlement_option_receivable : R.string.settlement_option_owed,
+                    option.getUser().getName(), Money.format(Math.abs(option.getNetCents())))
                     : getString(R.string.settlement_option_nothing, option.getUser().getName());
             if (option.getUser().getUid().equals(current)) {
                 checked = i;
@@ -239,7 +241,7 @@ public class SettlementFormActivity extends BaseActivity {
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.title_who_did_you_pay)
                 .setSingleChoiceItems(labels, checked, (dialog, which) -> {
-                    viewModel.selectReceiver(options.get(which).getUser().getUid());
+                    viewModel.selectMember(options.get(which).getUser().getUid());
                     dialog.dismiss();
                 })
                 .setNegativeButton(R.string.action_cancel, null)

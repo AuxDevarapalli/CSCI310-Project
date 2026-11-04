@@ -33,6 +33,7 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
     private TextView totalPay;
     private TextView totalReceive;
     private LinearLayout rows;
+    private View settledBanner;
     private View emptyView;
     private View errorView;
     private TextView errorText;
@@ -62,6 +63,7 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
         totalPay = view.findViewById(R.id.balance_total_pay);
         totalReceive = view.findViewById(R.id.balance_total_receive);
         rows = view.findViewById(R.id.balance_rows);
+        settledBanner = view.findViewById(R.id.balance_settled_banner);
         emptyView = view.findViewById(R.id.balance_empty);
         errorView = view.findViewById(R.id.balance_error);
         errorText = view.findViewById(R.id.balance_error_text);
@@ -99,6 +101,7 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
         }
         totalPay.setText(Money.format(summary.getTotalToPayCents()));
         totalReceive.setText(Money.format(summary.getTotalToReceiveCents()));
+        UiUtils.setVisible(settledBanner, summary.isAllSettled());
         rows.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (PairBalance pair : summary.getPairs()) {
@@ -128,7 +131,7 @@ public class BalanceFragment extends BaseFragment implements Refreshable {
         }
         status.setTextColor(UiUtils.color(requireContext(), color));
         // Extra: shortcut that opens the settlement form for this member.
-        UiUtils.setVisible(settleButton, pair.currentUserOwes());
+        UiUtils.setVisible(settleButton, !pair.isSettled());
         settleButton.setOnClickListener(v -> startActivity(SettlementFormActivity.newCreateIntent(
                 requireContext(), groupId, pair.getOtherUserId())));
     }

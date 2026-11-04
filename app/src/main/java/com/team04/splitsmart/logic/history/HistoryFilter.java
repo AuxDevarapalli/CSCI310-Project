@@ -1,12 +1,13 @@
 package com.team04.splitsmart.logic.history;
 
+import com.team04.splitsmart.logic.validation.DateProvider;
 import com.team04.splitsmart.model.Expense;
 import com.team04.splitsmart.model.Transaction;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
+import java.util.TreeSet;
 
 /**
  * Applies a {@link HistoryQuery} to transactions that are already loaded (FR 5.6). Filtering is
@@ -31,7 +32,7 @@ public class HistoryFilter {
             return result;
         }
         HistoryQuery q = query == null ? HistoryQuery.defaults() : query;
-        String keyword = q.getKeyword().toLowerCase(Locale.US);
+        String keyword = q.getKeyword();
         for (Transaction transaction : all) {
             if (matches(transaction, q, keyword)) {
                 result.add(transaction);
@@ -39,6 +40,18 @@ public class HistoryFilter {
         }
         sort(result, q.getSortOrder());
         return result;
+    }
+
+    /** Distinct transaction months, including months that contain only settlements. */
+    public List<String> availableMonths(List<? extends Transaction> transactions) {
+        TreeSet<String> months = new TreeSet<>(Comparator.reverseOrder());
+        for (Transaction transaction : transactions) {
+            String month = DateProvider.monthOf(transaction.getDate());
+            if (!month.isEmpty()) {
+                months.add(month);
+            }
+        }
+        return new ArrayList<>(months);
     }
 
     /** Sorts in place by creation time. */
@@ -63,15 +76,19 @@ public class HistoryFilter {
         if (query.getMemberFilter() != null && !transaction.involves(query.getMemberFilter())) {
             return false;
         }
+        if (query.getMonthFilter() != null
+                && !query.getMonthFilter().equals(DateProvider.monthOf(transaction.getDate()))) {
+            return false;
+        }
         return keyword.isEmpty() || matchesKeyword(transaction, keyword);
     }
 
-    /** Keyword search over expense titles and transaction notes, ignoring case. */
-    private boolean matchesKeyword(Transaction transaction, String lowerKeyword) {
+    /** Keyword search over expense titles and transaction notes, matching case. */
+    private boolean matchesKeyword(Transaction transaction, String keyword) {
         if (transaction instanceof Expense
-                && ((Expense) transaction).getTitle().toLowerCase(Locale.US).contains(lowerKeyword)) {
+                && ((Expense) transaction).getTitle().contains(keyword)) {
             return true;
         }
-        return transaction.getNote().toLowerCase(Locale.US).contains(lowerKeyword);
+        return transaction.getNote().contains(keyword);
     }
 }

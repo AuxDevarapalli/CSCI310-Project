@@ -1,5 +1,6 @@
 package com.team04.splitsmart.data;
 
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.team04.splitsmart.model.Category;
 import com.team04.splitsmart.model.Expense;
@@ -40,6 +41,7 @@ final class FirestoreMapper {
     static final String MEMBER_IDS = "memberIds";
     // groups/{groupId}/transactions/{id}
     static final String TYPE = "type";
+    static final String GROUP_PHOTO = "photo";
     static final String CREATOR_ID = "creatorId";
     static final String DATE = "date";
     static final String NOTE = "note";
@@ -94,9 +96,10 @@ final class FirestoreMapper {
     }
 
     static Group toGroup(DocumentSnapshot doc) {
+        Object photo = doc.get(GROUP_PHOTO);
         return new Group(doc.getId(), doc.getString(NAME), doc.getString(DESCRIPTION),
                 doc.getString(OWNER_ID), asStringList(doc.get(MEMBER_IDS)),
-                asLong(doc.get(CREATED_AT)));
+                asLong(doc.get(CREATED_AT)), photo instanceof Blob ? ((Blob) photo).toBytes() : null);
     }
 
     // ---- Transactions ----
