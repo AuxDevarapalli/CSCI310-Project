@@ -1,0 +1,59 @@
+@startuml fig2e-repo-support
+!pragma layout smetana
+!include style.iuml
+title Figure 2e (new classes in C4): schema mapping, error translation and live-update handle
+
+package "C4 Repositories: com.team04.splitsmart.data" {
+  class FirestoreMapper <<new>> {
+    {field} ~{static} USERS, USC_IDS, GROUPS, TRANSACTIONS : String (collection names)
+    {field} ~{static} NAME, USC_EMAIL, ..., RECEIVER_ID : String (field names)
+    ~{static} userToMap(user, createdAt) / toUser(doc)
+    ~{static} uscIdToMap(uid)
+    ~{static} groupToMap(group) / toGroup(doc)
+    ~{static} expenseToMap(expense, updatedAt) / settlementToMap(settlement, updatedAt)
+    ~{static} toTransaction(doc, groupId) : Transaction
+  }
+  class FirebaseErrors <<new>> {
+    ~{static} wrap(e : Exception) : RepositoryException
+    ~{static} messageFor(e : Exception) : String
+  }
+  class RepositoryException <<exception>> <<new>> {
+    -notFound : boolean
+    +RepositoryException(userMessage)
+    +RepositoryException(userMessage, cause)
+    +RepositoryException(userMessage, notFound, cause)
+    +isNotFound() : boolean
+    +{static} isNotFound(e : Exception) : boolean
+  }
+  class Subscription <<new>> {
+    -registration : ListenerRegistration
+    +remove() : void
+    ~{static} changesOnly(metadata, onChange : Runnable)
+  }
+  note bottom of Subscription
+    Ignores the first snapshot and this phone's
+    pending writes; errors also trigger a reload.
+  end note
+  class FirebaseEmulators <<new>> {
+    +{static} connect(host : String) : void
+  }
+  note bottom of FirebaseEmulators
+    Only in builds made with
+    -Psplitsmart.emulatorHost (any build type).
+  end note
+}
+
+package "C6 Firebase SDK" {
+  class DocumentSnapshot <<Firebase SDK, C6>>
+}
+
+FirestoreMapper -[hidden]right- FirebaseErrors
+FirebaseErrors .right.> RepositoryException : creates
+FirebaseErrors -[hidden]down- Subscription
+RepositoryException -[hidden]down- FirebaseEmulators
+FirestoreMapper ...> DocumentSnapshot : reads
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+endlegend
+@enduml
