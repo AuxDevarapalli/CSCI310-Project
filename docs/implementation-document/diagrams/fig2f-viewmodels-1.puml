@@ -1,0 +1,93 @@
+@startuml fig2f-viewmodels-1
+!pragma layout smetana
+!include style.iuml
+title Figure 2f (revises part of 2.2 Figure 2): C2 ViewModels, part 1: base class, container and the account and group ViewModels
+
+package "C2 ViewModels: com.team04.splitsmart.viewmodel" {
+  class AppContainer {
+    -authRepository, userRepository, groupRepository, transactionRepository
+    -validator, splitCalculator, balanceCalculator, historyFilter,
+    summaryCalculator, dateProvider
+    <b>+AppContainer(authRepository, userRepository, groupRepository,</b>
+    {method} <b>transactionRepository, dateProvider) (new)</b>
+    <b>+{static} createDefault() : AppContainer (new)</b>
+    <s><color:#888888>+{static} getInstance() : AppContainer (no longer a singleton) (removed)</color></s>
+    <b>+getAuthRepository() ... getSummaryCalculator() (changed)</b>
+  }
+  abstract class BaseViewModel {
+    #loading : MutableLiveData<Boolean>
+    {field} <b>#error : MutableLiveData<Event<String>> (was errorMessage : String)</b>
+    {field} <b>#info : MutableLiveData<Event<String>> (new)</b>
+    {field} <b>#fieldError : MutableLiveData<ValidationResult> (new)</b>
+    +getLoading() / getError() / getInfo() / getFieldError()
+    <b>+clearError() : void (new)</b>
+    <b>#showError(message | e) / #showInfo(message) (was fail)</b>
+    <b>#rejectIfInvalid(result : ValidationResult) : boolean (new)</b>
+    <s><color:#888888>#currentUid() : String (ViewModels keep AuthRepository themselves) (removed)</color></s>
+  }
+  class "Event&#60;T&#62;" as Event <<new>> {
+    -content : T
+    -handled : boolean
+    +getContentIfNotHandled() : T
+    +peekContent() : T
+  }
+  class ViewModelFactory {
+    -container : AppContainer
+    +create(modelClass : Class<T>) : T
+  }
+  class GroupListItem <<new>> {
+    -group : Group, balanceLoaded : boolean
+    -totalToPayCents, totalToReceiveCents : long
+  }
+  class AuthViewModel {
+    -currentUser : MutableLiveData<User>
+    <b>+register(name, email, uscId, password, confirmPassword) (changed)</b>
+    +login(email, password) : void
+    <b>+isLoggedIn() : boolean (new)</b>
+  }
+  class ProfileViewModel {
+    -user : MutableLiveData<User>
+    {field} <b>-loggedOut : MutableLiveData<Event<Boolean>> (new)</b>
+    +loadProfile() : void
+    +updateName(name) : void
+    +logout() : void
+  }
+  class GroupListViewModel {
+    {field} <b>-groups : MutableLiveData<List<GroupListItem>> (was List<Group>)</b>
+    {field} <b>-groupsSubscription : Subscription (new)</b>
+    +loadGroups() : void
+    <s><color:#888888>+createGroup(name, description) (moved to GroupViewModel)</color></s>
+    <b>+startLiveUpdates() : void (new)</b>
+    <b>+{static} totalToPay(items) / totalToReceive(items) : long (new)</b>
+  }
+  class GroupViewModel {
+    -group : MutableLiveData<Group>, members : MutableLiveData<List<User>>
+    {field} <b>-groupGone, groupSaved, memberAdded : MutableLiveData<Event<String>> (new)</b>
+    {field} <b>-groupDeleted, leftGroup, remoteChange : MutableLiveData<Event<Boolean>> (changed)</b>
+    {field} <b>-transactionRepository, balanceCalculator (settled-up check) (new)</b>
+    <b>+load(groupId) (was loadGroup)</b>
+    <b>+isOwner() : boolean (was isCurrentUserOwner)</b>
+    <b>+createGroup(name, description) (from GroupListViewModel)</b>
+    +addMember(email) / updateGroup(name, description) / deleteGroup()
+    <b>+removeMember(uid) / leaveGroup() / transferOwnership(newOwnerId) (new)</b>
+    <b>+startLiveUpdates(groupId) : void (new)</b>
+  }
+}
+
+AppContainer -[hidden]right- BaseViewModel
+BaseViewModel .right.> Event
+ViewModelFactory -up-> AppContainer
+Event -[hidden]down- GroupListItem
+BaseViewModel <|--- AuthViewModel
+BaseViewModel <|--- ProfileViewModel
+BaseViewModel <|--- GroupListViewModel
+AuthViewModel -[hidden]right- ProfileViewModel
+ProfileViewModel -[hidden]right- GroupListViewModel
+GroupListViewModel .up.> GroupListItem : publishes
+BaseViewModel <|---- GroupViewModel
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+Every ViewModel extends BaseViewModel.
+endlegend
+@enduml
