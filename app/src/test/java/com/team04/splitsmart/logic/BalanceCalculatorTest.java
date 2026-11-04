@@ -14,6 +14,7 @@ import static org.junit.Assert.assertTrue;
 import com.team04.splitsmart.logic.balance.BalanceCalculator;
 import com.team04.splitsmart.logic.balance.BalanceSummary;
 import com.team04.splitsmart.logic.balance.PairBalance;
+import com.team04.splitsmart.model.Settlement;
 import com.team04.splitsmart.model.Transaction;
 
 import org.junit.Test;
@@ -86,6 +87,17 @@ public class BalanceCalculatorTest {
         assertEquals(-600, calculator.netBetween(ALICE, BOB, txs));
         assertEquals(600, calculator.amountOwed(ALICE, BOB, txs));
         assertEquals(0, calculator.amountOwed(BOB, ALICE, txs));
+    }
+
+    @Test
+    public void recipientRecordedSettlementUsesActualPayerForBalance() {
+        Transaction expense = expense(ALICE, share(ALICE, 0), share(BOB, 1100));
+        Settlement received = new Settlement("payment", expense.getGroupId(), ALICE,
+                "2026-11-03", 2, "", BOB, ALICE, 500);
+
+        List<Transaction> transactions = Arrays.asList(expense, received);
+        assertEquals(600, calculator.amountOwed(BOB, ALICE, transactions));
+        assertEquals(0, calculator.amountOwed(ALICE, BOB, transactions));
     }
 
     @Test

@@ -61,7 +61,7 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
                     c.getUserRepository(), c.getTransactionRepository(), c.getHistoryFilter());
         }
         if (modelClass == SummaryViewModel.class) {
-            return (T) new SummaryViewModel(c.getTransactionRepository(),
+            return (T) new SummaryViewModel(c.getAuthRepository(), c.getTransactionRepository(),
                     c.getSummaryCalculator(), c.getDateProvider());
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
