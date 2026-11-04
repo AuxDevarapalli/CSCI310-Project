@@ -4,17 +4,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.graphics.ColorUtils;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.team04.splitsmart.R;
 import com.team04.splitsmart.logic.history.MonthlySummary;
 import com.team04.splitsmart.logic.history.SpendingInsights;
@@ -25,9 +21,7 @@ import com.team04.splitsmart.viewmodel.SummaryViewModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Monthly expense summary (FR 5.7): pick a month to see how many expenses were created, the
@@ -45,7 +39,7 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
     private View emptyNote;
     private View errorView;
     private TextView errorText;
-    private final Map<Category, View> categoryRows = new EnumMap<>(Category.class);
+    private CategoryBreakdownPanel categoryPanel;
 
     public static SummaryFragment newInstance(String groupId) {
         SummaryFragment fragment = new SummaryFragment();
@@ -80,7 +74,8 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
                         startActivity(TransactionDetailActivity.newIntent(requireContext(), groupId,
                                 expense.getId())), viewModel::selectTrendMonth);
         viewModel.getInsights().observe(getViewLifecycleOwner(), insightsPanel::render);
-        buildCategoryRows(view.findViewById(R.id.summary_categories));
+        categoryPanel = new CategoryBreakdownPanel(
+                view.findViewById(R.id.summary_categories), this::showCategoryExpenses);
 
         refreshLayout.setOnRefreshListener(this::refresh);
         view.findViewById(R.id.summary_retry).setOnClickListener(v -> refresh());
@@ -113,32 +108,12 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
         }
     }
 
-    private void buildCategoryRows(LinearLayout container) {
-        container.removeAllViews();
-        categoryRows.clear();
-        LayoutInflater inflater = LayoutInflater.from(requireContext());
-        for (Category category : Category.values()) {
-            View row = inflater.inflate(R.layout.item_summary_category, container, false);
-            ImageView icon = row.findViewById(R.id.category_icon);
-            TextView name = row.findViewById(R.id.category_name);
-            LinearProgressIndicator progress = row.findViewById(R.id.category_progress);
-            UiUtils.bindIconBadge(icon, UiUtils.iconFor(category), UiUtils.colorFor(category));
-            name.setText(category.getDisplayName());
-            int accent = UiUtils.color(requireContext(), UiUtils.colorFor(category));
-            progress.setIndicatorColor(accent);
-            progress.setTrackColor(ColorUtils.setAlphaComponent(accent, 48));
-            row.setOnClickListener(v -> {
-                SpendingInsights insights =
-                        viewModel.getInsights().getValue();
-                if (insights != null) {
-                    SpendingInsightsPanel.showExpenses(requireContext(), insights, category,
-                            expense -> startActivity(TransactionDetailActivity.newIntent(
-                                    requireContext(), groupId, expense.getId())));
-                }
-            });
-            row.setFocusable(true);
-            container.addView(row);
-            categoryRows.put(category, row);
+    private void showCategoryExpenses(Category category) {
+        SpendingInsights insights = viewModel.getInsights().getValue();
+        if (insights != null) {
+            SpendingInsightsPanel.showExpenses(requireContext(), insights, category,
+                    expense -> startActivity(TransactionDetailActivity.newIntent(
+                            requireContext(), groupId, expense.getId())));
         }
     }
 
@@ -148,19 +123,7 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
         }
         countText.setText(String.valueOf(summary.getExpenseCount()));
         totalText.setText(Money.format(summary.getTotalCents()));
-        long total = summary.getTotalCents();
-        for (Map.Entry<Category, View> entry : categoryRows.entrySet()) {
-            long amount = summary.getCategoryTotal(entry.getKey());
-            View row = entry.getValue();
-            TextView amountText = row.findViewById(R.id.category_amount);
-            TextView percentText = row.findViewById(R.id.category_percent);
-            LinearProgressIndicator progress = row.findViewById(R.id.category_progress);
-            int percent = total == 0 ? 0 : (int) Math.round(amount * 100.0 / total);
-            amountText.setText(Money.format(amount));
-            percentText.setText(getString(R.string.percent_value, percent));
-            progress.setProgressCompat(percent, true);
-            row.setAlpha(amount == 0 ? 0.6f : 1f);
-        }
+        categoryPanel.render(summary);
         UiUtils.setVisible(emptyNote, summary.isEmpty());
     }
 
