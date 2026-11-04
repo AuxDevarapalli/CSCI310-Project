@@ -70,11 +70,18 @@ service cloud.firestore {
       // instead of "permission denied"; it reveals nothing.
       allow read: if signedIn()
         && (resource == null || request.auth.uid in resource.data.memberIds);
+      function validGroupPhoto() {
+        let photo = request.resource.data.get('photo', null);
+        return !('photo' in request.resource.data)
+          || (photo is bytes && photo.size() > 0 && photo.size() <= 32768);
+      }
+
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.memberIds == [request.auth.uid]
         && request.resource.data.name is string
-        && request.resource.data.name.size() > 0;
+        && request.resource.data.name.size() > 0
+        && validGroupPhoto();
       // Owner edits (FR 1.5, FR 1.7): change details, add or remove members while staying a
       // member, or hand ownership to an existing member (changing nothing else).
       function isOwnerEdit() {
@@ -97,7 +104,8 @@ service cloud.firestore {
       allow update: if signedIn()
         && (isOwnerEdit() || isLeaving())
         && request.resource.data.name is string
-        && request.resource.data.name.size() > 0;
+        && request.resource.data.name.size() > 0
+        && validGroupPhoto();
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
 
       // groups/{groupId}/transactions/{transactionId}: expenses and settlements

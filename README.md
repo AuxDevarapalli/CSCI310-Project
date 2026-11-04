@@ -145,6 +145,8 @@ Demo script. You can combine rows, and doing the required features before the ex
 | 15 | Member management | As the owner, Members tab → ⋮ next to Carol → *Remove from group* while she still owes money → refused with the amount. As Bob (settled up), menu → *Leave group*. As the owner, ⋮ → *Make owner* on another member, then show the old owner now sees *Leave group* instead of Edit/Delete. Bob's old expenses still show his name. |
 | 16 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up and Record-payment shortcuts on balances, Match case search, Share balances, month picker, dark mode. |
 
+History also supports month filtering and CSV export. Summary includes an interactive six-month chart. Group owners can change the shared photo from **Edit group**.
+
 ## 5. How the code is organized
 
 `app/src/main/java/com/team04/splitsmart/` follows the 2.2 design's six components:

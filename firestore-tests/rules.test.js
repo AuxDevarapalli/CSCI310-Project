@@ -11,8 +11,10 @@ import {
 import {
   arrayRemove,
   arrayUnion,
+  Bytes,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -186,6 +188,24 @@ describe('groups/{groupId} (FR 1.4 - 1.7)', () => {
     await assertSucceeds(getDoc(doc(as(BOB), 'groups', 'gone')));
   });
 
+  test('only the owner can set or remove a bounded group photo', async () => {
+    const owner = doc(as(ALICE), 'groups', GROUP);
+    const member = doc(as(BOB), 'groups', GROUP);
+    const outsider = doc(as(CAROL), 'groups', GROUP);
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB])));
+    const photo = Bytes.fromUint8Array(new Uint8Array([1, 2, 3]));
+
+    await assertFails(updateDoc(member, { photo }));
+    await assertFails(updateDoc(owner, { photo: 'not bytes' }));
+    await assertFails(updateDoc(owner, { photo: Bytes.fromUint8Array(new Uint8Array(0)) }));
+    await assertFails(updateDoc(owner, { photo: Bytes.fromUint8Array(new Uint8Array(32769)) }));
+    await assertSucceeds(updateDoc(owner, { photo }));
+    await assertSucceeds(getDoc(member));
+    await assertFails(getDoc(outsider));
+    await assertFails(updateDoc(member, { photo: deleteField() }));
+    await assertSucceeds(updateDoc(owner, { photo: deleteField() }));
+  });
+
   test('only the owner can edit the group or add members', async () => {
     await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB])));
     await assertSucceeds(updateDoc(doc(as(ALICE), 'groups', GROUP),
@@ -283,7 +303,7 @@ describe('groups/{groupId}/transactions (FR 2.x, FR 5.x)', () => {
     await assertFails(setDoc(txDoc(db, 'e'), expense(ALICE, ALICE, [share(ALICE, 0), share(BOB, 0)])));
   });
 
-  test('the member who owes records a settlement to another member (FR 5.1, 5.2)', async () => {
+  test('a payer can record a valid settlement to a group member (FR 5.1, 5.2)', async () => {
     await assertSucceeds(setDoc(txDoc(as(ALICE), 's1'), settlement(ALICE, BOB, 500)));
     // Cannot record a payment to a non-member, to yourself, of $0, or as somebody else.
     await assertFails(setDoc(txDoc(as(ALICE), 's3'), settlement(ALICE, CAROL, 500)));
@@ -316,6 +336,19 @@ describe('groups/{groupId}/transactions (FR 2.x, FR 5.x)', () => {
     await assertFails(updateDoc(txDoc(as(BOB), 's1'), { amountCents: 100 }));
     await assertFails(deleteDoc(txDoc(as(BOB), 's1')));
     await assertSucceeds(deleteDoc(txDoc(as(ALICE), 's1')));
+  });
+
+  test('a recipient can record and edit a settlement, and a third party cannot record it', async () => {
+    const received = settlement(BOB, ALICE, 500, { creatorId: ALICE });
+    await assertSucceeds(setDoc(txDoc(as(ALICE), 'received'), received));
+    await assertSucceeds(updateDoc(txDoc(as(ALICE), 'received'), { amountCents: 400 }));
+    await assertFails(updateDoc(txDoc(as(BOB), 'received'), { amountCents: 300 }));
+    await assertFails(setDoc(txDoc(as(ALICE), 'outsider'),
+      settlement(CAROL, ALICE, 500, { creatorId: ALICE })));
+
+    await seed((db) => setDoc(doc(db, 'groups', GROUP), group(ALICE, [ALICE, BOB, CAROL])));
+    await assertFails(setDoc(txDoc(as(CAROL), 'thirdParty'), { ...received, creatorId: CAROL }));
+    await assertSucceeds(deleteDoc(txDoc(as(ALICE), 'received')));
   });
 
   test('only the creator can edit a transaction (FR 2.7, FR 5.3)', async () => {
