@@ -12,6 +12,7 @@ public class HistoryQuery {
     private TransactionType typeFilter;
     private Category categoryFilter;
     private String memberFilter;
+    private String monthFilter;
     private SortOrder sortOrder = SortOrder.NEWEST_FIRST;
 
     /** No keyword, no filters, newest first (FR 5.4). */
@@ -25,6 +26,7 @@ public class HistoryQuery {
         copy.typeFilter = typeFilter;
         copy.categoryFilter = categoryFilter;
         copy.memberFilter = memberFilter;
+        copy.monthFilter = monthFilter;
         copy.sortOrder = sortOrder;
         return copy;
     }
@@ -64,6 +66,15 @@ public class HistoryQuery {
         this.memberFilter = memberFilter;
     }
 
+    /** Calendar month (YYYY-MM), or null for all dates. */
+    public String getMonthFilter() {
+        return monthFilter;
+    }
+
+    public void setMonthFilter(String monthFilter) {
+        this.monthFilter = monthFilter;
+    }
+
     public SortOrder getSortOrder() {
         return sortOrder;
     }
@@ -75,6 +86,6 @@ public class HistoryQuery {
     /** True when a keyword or any filter narrows the history (sorting does not count). */
     public boolean isFiltered() {
         return !keyword.isEmpty() || typeFilter != null || categoryFilter != null
-                || memberFilter != null;
+                || memberFilter != null || monthFilter != null;
     }
 }

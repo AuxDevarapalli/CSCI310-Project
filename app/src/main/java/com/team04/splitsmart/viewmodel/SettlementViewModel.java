@@ -24,8 +24,8 @@ import java.util.List;
 
 /**
  * Record or edit a payment made outside the app (FR 5.1 to FR 5.3, design Figure 6). The
- * logged-in user is always the payer. The amount may not exceed what they currently owe the
- * receiver, which is recalculated from fresh data right before saving.
+ * logged-in user can record a payment they made or received. The debt is recalculated
+ * from fresh data right before saving.
  */
 public class SettlementViewModel extends BaseViewModel {
     private final AuthRepository authRepository;
@@ -42,13 +42,13 @@ public class SettlementViewModel extends BaseViewModel {
     private List<User> memberList = new ArrayList<>();
     private List<Transaction> transactions = new ArrayList<>();
     private Settlement editing;
-    private String receiverId;
+    private String counterpartyId;
 
     private final MutableLiveData<Boolean> ready = new MutableLiveData<>(false);
     private final MutableLiveData<String> loadError = new MutableLiveData<>();
-    private final MutableLiveData<User> payer = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> incoming = new MutableLiveData<>(false);
     private final MutableLiveData<List<ReceiverOption>> receivers = new MutableLiveData<>();
-    private final MutableLiveData<String> receiver = new MutableLiveData<>();
+    private final MutableLiveData<String> counterparty = new MutableLiveData<>();
     private final MutableLiveData<Long> owedCents = new MutableLiveData<>();
     private final MutableLiveData<Settlement> existingSettlement = new MutableLiveData<>();
     private final MutableLiveData<String> date = new MutableLiveData<>();
@@ -76,21 +76,21 @@ public class SettlementViewModel extends BaseViewModel {
         return loadError;
     }
 
-    /** The logged-in user, who is always the one who paid. */
-    public LiveData<User> getPayer() {
-        return payer;
+    /** Whether the selected member paid the signed-in user. */
+    public LiveData<Boolean> getIncoming() {
+        return incoming;
     }
 
-    /** Every other member with what the user owes them. */
+    /** Every other member with the signed pair balance. */
     public LiveData<List<ReceiverOption>> getReceivers() {
         return receivers;
     }
 
-    public LiveData<String> getReceiver() {
-        return receiver;
+    public LiveData<String> getCounterparty() {
+        return counterparty;
     }
 
-    /** What the user owes the selected receiver; 0 disables saving. */
+    /** The amount owed in the selected payment direction. */
     public LiveData<Long> getOwedCents() {
         return owedCents;
     }
@@ -113,9 +113,9 @@ public class SettlementViewModel extends BaseViewModel {
 
     /**
      * @param settlementId       settlement to edit, or {@code null} to record a new one
-     * @param preselectedReceiver member to pay (for example from the balance page), or null
+     * @param preselectedMember member to settle with (for example from the balance page), or null
      */
-    public void init(String groupId, String settlementId, String preselectedReceiver) {
+    public void init(String groupId, String settlementId, String preselectedMember) {
         if (initStarted) {
             return;
         }
@@ -130,7 +130,7 @@ public class SettlementViewModel extends BaseViewModel {
                     return;
                 }
                 group = loaded;
-                loadMembers(settlementId, preselectedReceiver);
+                loadMembers(settlementId, preselectedMember);
             }
 
             @Override
@@ -140,17 +140,12 @@ public class SettlementViewModel extends BaseViewModel {
         });
     }
 
-    private void loadMembers(String settlementId, String preselectedReceiver) {
+    private void loadMembers(String settlementId, String preselectedMember) {
         userRepository.getUsers(group.getMemberIds(), new DataCallback<List<User>>() {
             @Override
             public void onSuccess(List<User> users) {
                 memberList = new ArrayList<>(users);
-                for (User user : users) {
-                    if (user.getUid().equals(currentUid)) {
-                        payer.setValue(user);
-                    }
-                }
-                loadTransactions(settlementId, preselectedReceiver);
+                loadTransactions(settlementId, preselectedMember);
             }
 
             @Override
@@ -160,7 +155,7 @@ public class SettlementViewModel extends BaseViewModel {
         });
     }
 
-    private void loadTransactions(String settlementId, String preselectedReceiver) {
+    private void loadTransactions(String settlementId, String preselectedMember) {
         transactionRepository.getTransactions(group.getId(),
                 new DataCallback<List<Transaction>>() {
                     @Override
@@ -184,15 +179,16 @@ public class SettlementViewModel extends BaseViewModel {
                             editing = (Settlement) found;
                             existingSettlement.setValue(editing);
                             date.setValue(editing.getDate());
-                            receiverId = editing.getReceiverId();
+                            counterpartyId = currentUid.equals(editing.getPayerId())
+                                    ? editing.getReceiverId() : editing.getPayerId();
                         } else {
                             date.setValue(dateProvider.today());
-                            receiverId = pickInitialReceiver(preselectedReceiver);
+                            counterpartyId = pickInitialMember(preselectedMember);
                         }
                         loading.setValue(false);
                         publishReceivers();
-                        if (receiverId != null) {
-                            selectReceiver(receiverId);
+                        if (counterpartyId != null) {
+                            selectMember(counterpartyId);
                         }
                         ready.setValue(true);
                     }
@@ -213,13 +209,13 @@ public class SettlementViewModel extends BaseViewModel {
         return null;
     }
 
-    /** Uses the requested member if valid, otherwise the first member the user owes. */
-    private String pickInitialReceiver(String preselected) {
+    /** Uses the requested member if valid, otherwise the first member with an open balance. */
+    private String pickInitialMember(String preselected) {
         if (preselected != null && !preselected.equals(currentUid) && group.isMember(preselected)) {
             return preselected;
         }
         for (User member : memberList) {
-            if (!member.getUid().equals(currentUid) && owedTo(member.getUid()) > 0) {
+            if (!member.getUid().equals(currentUid) && pairBalance(member.getUid()) != 0) {
                 return member.getUid();
             }
         }
@@ -245,28 +241,31 @@ public class SettlementViewModel extends BaseViewModel {
         return result;
     }
 
-    private long owedTo(String uid) {
-        return balanceCalculator.amountOwed(currentUid, uid, transactionsExcludingEditing());
+    private long pairBalance(String uid) {
+        return balanceCalculator.netBetween(currentUid, uid, transactionsExcludingEditing());
     }
 
     private void publishReceivers() {
         List<ReceiverOption> options = new ArrayList<>();
         for (User member : memberList) {
             if (!member.getUid().equals(currentUid)) {
-                options.add(new ReceiverOption(member, owedTo(member.getUid())));
+                options.add(new ReceiverOption(member, pairBalance(member.getUid())));
             }
         }
         receivers.setValue(options);
     }
 
-    /** Chooses who was paid and shows how much the user owes them (design Figure 6). */
-    public void selectReceiver(String uid) {
+    /** Chooses the other member and shows the debt in the selected direction. */
+    public void selectMember(String uid) {
         if (group == null || uid == null || uid.equals(currentUid) || !group.isMember(uid)) {
             return;
         }
-        receiverId = uid;
-        receiver.setValue(uid);
-        owedCents.setValue(owedTo(uid));
+        counterpartyId = uid;
+        long balance = pairBalance(uid);
+        boolean received = editing == null ? balance > 0 : currentUid.equals(editing.getReceiverId());
+        incoming.setValue(received);
+        counterparty.setValue(uid);
+        owedCents.setValue(Math.max(0, received ? balance : -balance));
         clearError();
     }
 
@@ -276,9 +275,9 @@ public class SettlementViewModel extends BaseViewModel {
             return;
         }
         clearError();
-        if (receiverId == null) {
+        if (counterpartyId == null) {
             fieldError.setValue(ValidationResult.error(ValidationResult.FIELD_RECEIVER,
-                    "Choose the member you paid"));
+                    "Choose the other member"));
             return;
         }
         long amountCents;
@@ -295,13 +294,15 @@ public class SettlementViewModel extends BaseViewModel {
             showError("Only the person who recorded this settlement can edit it.");
             return;
         }
-        String paidTo = receiverId;
+        boolean received = Boolean.TRUE.equals(incoming.getValue());
+        String paidBy = received ? counterpartyId : currentUid;
+        String paidTo = received ? currentUid : counterpartyId;
         loading.setValue(true);
         transactionRepository.getTransactions(group.getId(), new DataCallback<List<Transaction>>() {
             @Override
             public void onSuccess(List<Transaction> fresh) {
                 transactions = new ArrayList<>(fresh);
-                long owed = owedTo(paidTo);
+                long owed = balanceCalculator.amountOwed(paidBy, paidTo, transactionsExcludingEditing());
                 owedCents.setValue(owed);
                 publishReceivers();
                 ValidationResult result = validator.validateSettlement(amountCents, owed);
@@ -316,7 +317,7 @@ public class SettlementViewModel extends BaseViewModel {
                         currentUid,
                         editing == null ? dateProvider.today() : editing.getDate(),
                         editing == null ? dateProvider.nowMillis() : editing.getCreatedAt(),
-                        note, currentUid, paidTo, amountCents));
+                        note, paidBy, paidTo, amountCents));
             }
 
             @Override

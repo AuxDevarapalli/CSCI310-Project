@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** FR 5.4 and FR 5.6. */
@@ -62,21 +63,26 @@ public class HistoryFilterTest {
     }
 
     @Test
-    public void keywordMatchesTitlesIgnoringCase() {
+    public void keywordMatchesTitlesWithExactCase() {
         HistoryQuery query = HistoryQuery.defaults();
-        query.setKeyword("uber");
+        query.setKeyword("Uber");
         assertEquals(Arrays.<Transaction>asList(uber), filter.apply(all, query));
+        query.setKeyword("uber");
+        assertTrue(filter.apply(all, query).isEmpty());
     }
 
     @Test
     public void keywordMatchesNotesOfAnyTransaction() {
         HistoryQuery query = HistoryQuery.defaults();
-        query.setKeyword("VENMO");
-        assertEquals(Arrays.<Transaction>asList(payBack), filter.apply(all, query));
-
         Expense withNote = TestData.expenseWithNote("Dinner", "paid with venmo card", 9_000_000);
-        List<Transaction> both = filter.apply(Arrays.asList(payBack, withNote), query);
-        assertEquals(2, both.size());
+        List<Transaction> transactions = Arrays.asList(payBack, withNote);
+
+        query.setKeyword("Venmo");
+        assertEquals(Arrays.asList(payBack), filter.apply(transactions, query));
+        query.setKeyword("venmo");
+        assertEquals(Arrays.asList(withNote), filter.apply(transactions, query));
+        query.setKeyword("VENMO");
+        assertTrue(filter.apply(transactions, query).isEmpty());
     }
 
     @Test
@@ -114,6 +120,43 @@ public class HistoryFilterTest {
         query.setKeyword("night");
         assertEquals(Arrays.<Transaction>asList(movie), filter.apply(all, query));
         assertTrue(query.isFiltered());
+    }
+
+    @Test
+    public void monthFilterIncludesBothTransactionTypesAndCombinesWithOtherFilters() {
+        HistoryQuery query = HistoryQuery.defaults();
+        query.setMonthFilter("2026-09");
+        assertEquals(Arrays.asList(payBack, uber, groceries), filter.apply(all, query));
+        assertTrue(query.isFiltered());
+
+        query.setMemberFilter(ALICE);
+        query.setSortOrder(SortOrder.OLDEST_FIRST);
+        assertEquals(Arrays.asList(groceries, payBack), filter.apply(all, query));
+
+        query.setTypeFilter(TransactionType.SETTLEMENT);
+        assertEquals(Arrays.asList(payBack), filter.apply(all, query));
+    }
+
+    @Test
+    public void copyingAndClearingMonthFilterPreservesOriginal() {
+        HistoryQuery original = HistoryQuery.defaults();
+        original.setMonthFilter("2026-10");
+        HistoryQuery copy = original.copy();
+        assertEquals(Arrays.asList(movie), filter.apply(all, copy));
+
+        copy.setMonthFilter(null);
+
+        assertFalse(copy.isFiltered());
+        assertEquals(4, filter.apply(all, copy).size());
+        assertEquals(Arrays.asList(movie), filter.apply(all, original));
+    }
+
+    @Test
+    public void availableMonthsAreDistinctAndIncludeSettlementOnlyMonths() {
+        Settlement december = settlement(BOB, ALICE, 100, "2026-12-01", "");
+        assertEquals(Arrays.asList("2026-12", "2026-10", "2026-09"),
+                filter.availableMonths(Arrays.asList(december, groceries, uber, movie, payBack)));
+        assertTrue(filter.availableMonths(Collections.emptyList()).isEmpty());
     }
 
     @Test

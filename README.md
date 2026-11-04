@@ -60,7 +60,7 @@ single-field filter, and sorting happens in the app.
 ./gradlew test
 ```
 
-Runs 71 JUnit tests for the business logic (money parsing/formatting, every split method
+Runs 90 JUnit tests for the business logic (money parsing/formatting, every split method
 and the FR 3.5 rounding rule, pairwise balances, validation, history filtering, monthly
 summaries, member-management helpers) using the exact examples from the customer description.
 They need no Firebase.
@@ -71,7 +71,7 @@ Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firesto
 cd firestore-tests && npm install && npm test
 ```
 
-25 tests check NFR 4 on the server side: members-only access, owner-only group changes,
+27 tests check NFR 4 on the server side: members-only access, owner-only group changes,
 creator-only edits, locked USC email/ID, unique USC IDs, valid document contents, and the
 leave / remove member / transfer ownership rules.
 
@@ -102,14 +102,26 @@ be shown on another member's screen. Accounts can also be switched with *Profile
 | 6 | FR 2.3, 3.3 | Exact split: amounts that don't add up show "Amounts add up to $28.00, not $30.00" and Save is refused; "Fill evenly" helps. Show an amount with 3 decimals is rejected. |
 | 7 | FR 3.4–3.5 | Percentage split $10.01 at 50/50 → $5.01 and $5.00. Percentages that don't total 100% are refused. |
 | 8 | FR 4.1–4.4 | Balances tab: total to pay and total to receive shown separately, one line per member ("Bob owes you …", "You owe …", "settled up"). Show a chain (Alice→Bob→Carol) is **not** simplified. |
-| 9 | FR 5.1–5.2 | As Bob, Settle up → pay Alice. Show "more than owed" and "$0" are refused; record a valid amount; Alice's balance drops after refresh. |
-| 10 | FR 5.4–5.6 | History: newest first, settlements labeled "Settlement"; keyword search on titles/notes; filter by type, category, member; flip the sort order; open a transaction for full details. |
+| 9 | FR 5.1–5.2 | As Bob, Settle up → pay Alice. Show "more than owed" and "$0" are refused. Record a partial payment, then sign in as Alice and record another payment from Bob. Both entries should show Bob paid Alice. |
+| 10 | FR 5.4–5.6 | History: newest first, settlements labeled "Settlement"; case-sensitive keyword search on titles/notes; filter by type, category, member; flip the sort order; open a transaction for full details. |
 | 11 | FR 2.7–2.9, 5.3 | Edit an expense (balances/history/summary update) and delete one with the confirmation dialog. As another member, Edit/Delete are hidden. Same for a settlement. |
 | 12 | FR 5.7 | Summary tab: pick a month; number of expenses, total, and per-category totals that add up; settlements excluded. |
 | 13 | NFR 1, 3 | Close and reopen the app: data is still there. Changes made on device A appear on device B after pull-to-refresh. |
 | 14 | Live updates | With both devices on the same group, add an expense on device A: device B's History and Balances update **without** refreshing. Add someone to a group: it appears on their home screen immediately. |
 | 15 | Member management | As the owner, Members tab → ⋮ next to Carol → *Remove from group* while she still owes money → refused with the amount. As Bob (settled up), menu → *Leave group*. As the owner, ⋮ → *Make owner* on another member, then show the old owner now sees *Leave group* instead of Edit/Delete. Bob's old expenses still show his name. |
 | 16 | Extras | Home screen totals per group, "you lent / you borrowed" in history, Settle-up shortcut on balances, Share balances, month picker, dark mode. |
+
+**Settled-expense policy:** Creators can still edit or delete expenses after a settlement.
+Payments stay in history, and the recalculated pair balance can reverse direction if a
+payment now exceeds the underlying debt.
+
+**Optional reporting features:** In History, choose a month alongside the existing filters.
+The download button saves the matching rows, in the displayed order, as a CSV through Android’s
+file picker. The CSV includes payment roles and expense shares. In Summary, tap a category to open
+its expenses, compare what you paid with your assigned shares, or tap a bar in the six-month chart
+to change the selected month. Expense totals and personal figures exclude settlements.
+Group owners can add, replace, or remove a shared thumbnail from **Edit group**. The photo picker
+previews the change, and **Save changes** applies it for all members.
 
 ## 5. How the code is organized
 
@@ -164,8 +176,8 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 The app follows our 2.1 requirements and 2.2 design. It has been verified as follows:
 
 * full Gradle build (`./gradlew assembleDebug`) with the real libraries;
-* 71 JUnit tests for the business logic, all passing;
-* `firestore.rules` tested against the real Firestore emulator (25 tests, all passing);
+* 90 JUnit tests for the business logic, all passing;
+* `firestore.rules` tested against the real Firestore emulator (27 tests, all passing);
 * an end-to-end run on an Android 15 emulator against the local Firebase emulators:
   registration and login (with error cases), profile, groups and members, equal and percentage
   splits, balances, settlements and their limits, history search, the monthly summary, group

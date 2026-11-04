@@ -2,22 +2,22 @@ package com.team04.splitsmart.viewmodel;
 
 import com.team04.splitsmart.model.User;
 
-/** A member the user could pay back, with how much the user currently owes them. */
+/** A member the user can settle with, along with their current pair balance. */
 public class ReceiverOption {
     private final User user;
-    private final long owedCents;
+    private final long netCents;
 
-    public ReceiverOption(User user, long owedCents) {
+    public ReceiverOption(User user, long netCents) {
         this.user = user;
-        this.owedCents = owedCents;
+        this.netCents = netCents;
     }
 
     public User getUser() {
         return user;
     }
 
-    /** What the current user owes this member right now; 0 when nothing is owed. */
-    public long getOwedCents() {
-        return owedCents;
+    /** Positive when this member owes the current user, negative when the current user owes them. */
+    public long getNetCents() {
+        return netCents;
     }
 }

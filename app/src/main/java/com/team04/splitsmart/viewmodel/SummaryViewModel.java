@@ -3,9 +3,11 @@ package com.team04.splitsmart.viewmodel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.team04.splitsmart.data.AuthRepository;
 import com.team04.splitsmart.data.DataCallback;
 import com.team04.splitsmart.data.TransactionRepository;
 import com.team04.splitsmart.logic.history.MonthlySummary;
+import com.team04.splitsmart.logic.history.SpendingInsights;
 import com.team04.splitsmart.logic.history.SummaryCalculator;
 import com.team04.splitsmart.logic.validation.DateProvider;
 import com.team04.splitsmart.model.Transaction;
@@ -18,27 +20,37 @@ import java.util.List;
  * spending and spending per category. Settlements are excluded.
  */
 public class SummaryViewModel extends BaseViewModel {
+    private final AuthRepository authRepository;
     private final TransactionRepository transactionRepository;
     private final SummaryCalculator calculator;
 
     private List<Transaction> transactions = new ArrayList<>();
     private String selectedMonth;
+    private String trendEnd;
 
+    private final MutableLiveData<SpendingInsights> insights = new MutableLiveData<>();
     private final MutableLiveData<MonthlySummary> summary = new MutableLiveData<>();
     private final MutableLiveData<String> month = new MutableLiveData<>();
     private final MutableLiveData<List<String>> monthsWithExpenses = new MutableLiveData<>();
     private final MutableLiveData<String> loadError = new MutableLiveData<>();
 
-    public SummaryViewModel(TransactionRepository transactionRepository,
+    public SummaryViewModel(AuthRepository authRepository,
+                            TransactionRepository transactionRepository,
                             SummaryCalculator calculator, DateProvider dateProvider) {
+        this.authRepository = authRepository;
         this.transactionRepository = transactionRepository;
         this.calculator = calculator;
         this.selectedMonth = dateProvider.currentMonth();
+        trendEnd = selectedMonth;
         month.setValue(selectedMonth);
     }
 
     public LiveData<MonthlySummary> getSummary() {
         return summary;
+    }
+
+    public LiveData<SpendingInsights> getInsights() {
+        return insights;
     }
 
     /** Selected month as "YYYY-MM". */
@@ -80,8 +92,17 @@ public class SummaryViewModel extends BaseViewModel {
         if (yearMonth == null || yearMonth.isEmpty()) {
             return;
         }
+        trendEnd = yearMonth;
         selectedMonth = yearMonth;
         recompute();
+    }
+
+    public void selectTrendMonth(String yearMonth) {
+        SpendingInsights report = insights.getValue();
+        if (report != null && report.getTrend().containsKey(yearMonth)) {
+            selectedMonth = yearMonth;
+            recompute();
+        }
     }
 
     public void previousMonth() {
@@ -95,5 +116,7 @@ public class SummaryViewModel extends BaseViewModel {
     private void recompute() {
         month.setValue(selectedMonth);
         summary.setValue(calculator.calculate(transactions, selectedMonth));
+        insights.setValue(SpendingInsights.calculate(transactions, selectedMonth,
+                authRepository.getCurrentUserId(), trendEnd));
     }
 }

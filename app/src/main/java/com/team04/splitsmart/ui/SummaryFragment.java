@@ -17,6 +17,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.team04.splitsmart.R;
 import com.team04.splitsmart.logic.history.MonthlySummary;
+import com.team04.splitsmart.logic.history.SpendingInsights;
 import com.team04.splitsmart.logic.validation.DateProvider;
 import com.team04.splitsmart.logic.validation.Money;
 import com.team04.splitsmart.model.Category;
@@ -74,6 +75,11 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
         emptyNote = view.findViewById(R.id.summary_empty_note);
         errorView = view.findViewById(R.id.summary_error);
         errorText = view.findViewById(R.id.summary_error_text);
+        SpendingInsightsPanel insightsPanel = new SpendingInsightsPanel(
+                view.findViewById(R.id.spending_insights), expense ->
+                        startActivity(TransactionDetailActivity.newIntent(requireContext(), groupId,
+                                expense.getId())), viewModel::selectTrendMonth);
+        viewModel.getInsights().observe(getViewLifecycleOwner(), insightsPanel::render);
         buildCategoryRows(view.findViewById(R.id.summary_categories));
 
         refreshLayout.setOnRefreshListener(this::refresh);
@@ -121,6 +127,16 @@ public class SummaryFragment extends BaseFragment implements Refreshable {
             int accent = UiUtils.color(requireContext(), UiUtils.colorFor(category));
             progress.setIndicatorColor(accent);
             progress.setTrackColor(ColorUtils.setAlphaComponent(accent, 48));
+            row.setOnClickListener(v -> {
+                SpendingInsights insights =
+                        viewModel.getInsights().getValue();
+                if (insights != null) {
+                    SpendingInsightsPanel.showExpenses(requireContext(), insights, category,
+                            expense -> startActivity(TransactionDetailActivity.newIntent(
+                                    requireContext(), groupId, expense.getId())));
+                }
+            });
+            row.setFocusable(true);
             container.addView(row);
             categoryRows.put(category, row);
         }

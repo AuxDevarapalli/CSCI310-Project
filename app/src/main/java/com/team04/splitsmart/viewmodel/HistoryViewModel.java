@@ -8,6 +8,7 @@ import com.team04.splitsmart.data.DataCallback;
 import com.team04.splitsmart.data.GroupRepository;
 import com.team04.splitsmart.data.TransactionRepository;
 import com.team04.splitsmart.data.UserRepository;
+import com.team04.splitsmart.logic.history.HistoryCsv;
 import com.team04.splitsmart.logic.history.HistoryFilter;
 import com.team04.splitsmart.logic.history.HistoryQuery;
 import com.team04.splitsmart.logic.history.SortOrder;
@@ -18,6 +19,7 @@ import com.team04.splitsmart.model.TransactionType;
 import com.team04.splitsmart.model.User;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,7 @@ public class HistoryViewModel extends BaseViewModel {
     private final HistoryFilter filter;
 
     private List<Transaction> all = new ArrayList<>();
+    private String pendingExport;
     private HistoryQuery query = HistoryQuery.defaults();
 
     private final MutableLiveData<List<Transaction>> visible = new MutableLiveData<>();
@@ -210,6 +213,39 @@ public class HistoryViewModel extends BaseViewModel {
         HistoryQuery next = query.copy();
         next.setMemberFilter(uid);
         applyQuery(next);
+    }
+
+    public List<String> getAvailableMonths() {
+        return filter.availableMonths(all);
+    }
+
+    public void setMonthFilter(String month) {
+        HistoryQuery next = query.copy();
+        next.setMonthFilter(month);
+        applyQuery(next);
+    }
+
+    public boolean canExport() {
+        List<Transaction> matching = visible.getValue();
+        return pendingExport == null && !isLoading() && loadError.getValue() == null
+                && matching != null && !matching.isEmpty();
+    }
+
+    /** Freeze the displayed results while the Android file picker is open. */
+    public boolean prepareExport(String unknownMember) {
+        if (!canExport()) {
+            return false;
+        }
+        Map<String, User> names = users.getValue();
+        pendingExport = HistoryCsv.encode(visible.getValue(),
+                names == null ? Collections.emptyMap() : names, unknownMember);
+        return true;
+    }
+
+    public String takeExport() {
+        String csv = pendingExport;
+        pendingExport = null;
+        return csv;
     }
 
     public void setSortOrder(SortOrder order) {
