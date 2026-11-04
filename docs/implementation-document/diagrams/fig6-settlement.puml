@@ -1,0 +1,117 @@
+@startuml fig6-settlement
+!include style.iuml
+title Figure 6 (revises 2.2 Figure 6): Record a settlement (FR 5.1 to 5.3; D7, R9)
+
+actor User
+participant ":SettlementFormActivity" as UI
+participant ":SettlementViewModel" as VM
+participant ":GroupRepository" as GR
+participant ":UserRepository" as UR
+participant ":TransactionRepository" as TR
+participant ":BalanceCalculator" as BC
+participant "Money" as M
+participant ":InputValidator" as V
+participant ":DateProvider" as D
+participant "db :\nFirebaseFirestore" as DB
+
+User -> UI : tap Settle up, <b>or Settle up / Record payment</b>\n<b>next to a balance (Figure 5)</b>
+UI -> VM : <b>init(groupId, null, preselectedMember, preselectedReceived)</b>
+note right of VM
+  NEW (R9): the Settle up button passes (null, null);
+  a balance row passes (bob, false) for Settle up
+  or (bob, true) for Record payment
+end note
+VM -> GR : <b>getGroup(groupId, cb)</b>
+VM -> UR : <b>getUsers(group.memberIds, cb)</b>
+VM -> TR : <b>getTransactions(groupId, cb)</b>
+note right of VM
+  CHANGED: everything is loaded once in init()
+  instead of on every selectReceiver()
+end note
+TR -> DB : get groups/{groupId}/transactions
+DB --> TR : documents
+TR --> VM : transactions
+note right of VM
+  NEW (R9): unless preselected, the form starts on "I paid", or on
+  "I was paid" when the user owes no one but is owed; the preselected
+  member, or else the first one with something owed, goes straight
+  to selectOther(uid)
+end note
+
+User -> UI : <b>choose "I paid" or "I was paid"</b>
+UI -> VM : <b>setReceived(received)</b>
+note right of VM
+  NEW (R9): republishes the member list for that
+  direction, then runs selectOther() again for the
+  chosen member (or the first one with something owed)
+end note
+User -> UI : choose the other member\n(the picker shows e.g. <b>"Bob · you owe $11.00"</b>)
+UI -> VM : <b>selectOther(uid)</b>
+VM -> BC : <b>amountOwed(payer, receiver, transactions)</b>
+note right of VM
+  CHANGED: payer and receiver follow the direction:
+  (currentUid, uid) for "I paid",
+  (uid, currentUid) for "I was paid"
+end note
+note right of BC
+  amountOwed = max(0, -netBetween(payer, receiver, transactions))
+  <b>the settlement being edited is left out of the sum</b>
+end note
+BC --> VM : owedCents
+alt owedCents == 0
+  VM --> UI : <b>owedCents = 0 (LiveData)</b>
+  UI --> User : <b>"You don't owe Bob anything right now, ..."</b>\n<b>or "Bob doesn't owe you anything right now, ..."</b>; Save disabled
+else owedCents > 0
+  VM --> UI : owedCents (LiveData)
+  UI --> User : "You owe Bob $11.00." <b>or "Bob owes you $11.00."</b>,\n<b>"Pay the full amount" / "They paid the full amount" chip</b>
+end
+
+User -> UI : enter amount and note, tap Save
+UI -> VM : save(amountText, note)
+VM -> M : parseDollars(amountText)
+M --> VM : amountCents (or InvalidAmountException)
+VM -> V : <b>validateNote(note)</b>
+V --> VM : <b>result</b>
+break amount does not parse, or note too long
+  VM --> UI : <b>fieldError (LiveData)</b>
+end
+VM -> TR : <b>getTransactions(groupId, cb)</b>
+note right of VM
+  NEW: re-read right before saving so the
+  limit uses the current balance (FR 5.2, D7)
+end note
+TR -> DB : <b>get groups/{groupId}/transactions</b>
+DB --> TR : <b>documents</b>
+TR --> VM : <b>fresh transactions</b>
+VM -> BC : <b>amountOwed(payer, receiver, transactions)</b>
+BC --> VM : <b>owedCents</b>
+VM -> V : validateSettlement(amountCents, owedCents, <b>received</b>)
+V --> VM : result
+alt not valid (nothing owed, not above $0.00, or more than owed)
+  VM --> UI : <b>fieldError (LiveData)</b>
+else valid
+  VM -> D : today(), <b>nowMillis()</b>
+  D --> VM : "YYYY-MM-DD", time
+  VM -> VM : <b>settlement = new Settlement(...)</b>
+  note right of VM
+    CHANGED (R9): payerId and receiverId follow the direction:
+    (currentUid, other) for "I paid", (other, currentUid) for
+    "I was paid"; creatorId is always the current user
+  end note
+  VM -> TR : addSettlement(settlement, <b>nowMillis</b>, cb)
+  TR -> DB : set groups/{groupId}/transactions/{newId}\n(type = SETTLEMENT)
+  note left of DB
+    NEW rules (A4, R9): the creator must be
+    the payer or the receiver, and both must
+    be members of the group
+  end note
+  DB --> TR : ok
+  TR --> VM : cb.onSuccess(id)
+  VM --> UI : <b>saved (Event)</b>
+  UI --> User : form closes; the balance with Bob is lower on reload
+end
+
+legend bottom left
+<b>Bold</b> messages and notes marked NEW or CHANGED are departures from Project 2.2; plain = unchanged.
+endlegend
+@enduml

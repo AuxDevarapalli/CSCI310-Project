@@ -9,8 +9,8 @@ Project 2.2 design: MVVM over Firebase Authentication + Cloud Firestore.
 
 | Document | Where |
 |---|---|
-| Project 2.3 implementation document | [`docs/implementation-document.md`](docs/implementation-document.md) (the PDF is submitted on Brightspace; `docs/tools/` can rebuild one from this file) |
-| Revised diagrams (PlantUML sources + images) | [`docs/diagrams/`](docs/diagrams/) |
+| Project 2.3 implementation document | [`docs/implementation-document/Team04_Project2.3_Implementation_Document.pdf`](docs/implementation-document/Team04_Project2.3_Implementation_Document.pdf) (the PDF submitted on Brightspace; its source and build script are in the same folder) |
+| Revised diagrams (PlantUML sources + images) | [`docs/implementation-document/diagrams/`](docs/implementation-document/diagrams/) |
 | Firestore security rules | [`firestore.rules`](firestore.rules) |
 
 ---
@@ -179,7 +179,7 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 
 ## 6. Ideas for improving it further
 
-* Notifications when you are added to a group or an expense involves you (RC-12 in the
+* Notifications when you are added to a group or an expense involves you (R12 in the
   implementation document analyses the design impact).
 * UI tests with Espresso, and ViewModel tests with fake repositories.
 * A charts library for the monthly summary (charts are optional and not graded).

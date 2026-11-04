@@ -1,0 +1,92 @@
+@startuml fig2i-ui-2
+!pragma layout smetana
+!include style.iuml
+title Figure 2i (revises part of 2.2 Figure 2): C1 UI Views, part 2: tab fragments, adapters and helpers (all fragments extend BaseFragment and implement Refreshable)
+
+package "C1 UI Views: com.team04.splitsmart.ui" {
+  class UiUtils <<new>> {
+    +{static} applySystemBarInsets(root) / bindAvatar(avatar, user) : void
+    +{static} titleOf(transaction) / typeLabel(transaction) : String
+    +{static} nameOf(users, uid, currentUid) : String
+    +{static} iconFor(category) / colorFor(category) : int
+    <b>+{static} submitKeepingTop(adapter, list, items) : void (new)</b>
+  }
+  abstract class BaseFragment <<new>> {
+    #obtainViewModel(type) : T
+    #obtainActivityViewModel(type) : T
+    #showMessage(message) / observeMessages(viewModel)
+  }
+  interface Refreshable <<interface>> <<new>> {
+    +refresh() : void
+  }
+  class SimpleTextWatcher <<new>> {
+    implements TextWatcher
+    +SimpleTextWatcher(listener : OnTextChanged)
+    +afterTextChanged(s : Editable) : void
+  }
+  class HistoryFragment {
+    {field} <b>-typeGroup, categoryChip, memberChip, sortChip (chips, was Spinners) (changed)</b>
+    {field} <b>-matchCaseChip : Chip (checkable "Match case", R13) (new)</b>
+    -adapter : TransactionAdapter
+    {field} <b>-list : RecyclerView (new)</b>
+    -viewModel : HistoryViewModel
+    <b>+refresh() : void (new)</b>
+    <b>-renderList(transactions) / renderQuery(query) (changed)</b>
+  }
+  class BalanceFragment {
+    -viewModel : BalanceViewModel
+    <b>+refresh() : void (new)</b>
+    -render(summary : BalanceSummary)
+    <b>-bindRow(row, pair : PairBalance) (R9) (new)</b>
+    <b>-shareBalances() : void (new)</b>
+  }
+  class SummaryFragment {
+    -viewModel : SummaryViewModel
+    <b>+refresh() : void (new)</b>
+    -render(summary : MonthlySummary)
+    <b>-showMonthPicker() (was onMonthSelected)</b>
+  }
+  class MembersFragment <<new>> {
+    {field} -viewModel : GroupViewModel (shared with the activity)
+    +refresh() : void
+    -addMember() : void
+    -renderMembers(members : List<User>)
+    -showMemberOptions(member : User)
+  }
+  class GroupAdapter <<new>> {
+    extends ListAdapter<GroupListItem, GroupAdapter.Holder>
+  }
+  class TransactionAdapter <<new>> {
+    extends ListAdapter<Transaction, TransactionAdapter.Holder>
+    +setUsers(users : Map<String, User>) : void
+  }
+  note left of UiUtils
+    submitKeepingTop: a list that was at its top
+    stays there after an update, so a new row
+    inserted above the visible area is seen.
+    Used by GroupListActivity and HistoryFragment.
+  end note
+  note bottom of BalanceFragment
+    bindRow: the row button shows only if
+    pair.currentUserOwes() || pair.owesCurrentUser().
+    "Settle up" (you owe) and "Record payment"
+    (they owe you) open SettlementFormActivity's
+    newCreateIntent and newReceivedIntent (R9).
+  end note
+}
+
+UiUtils -[hidden]right- BaseFragment
+BaseFragment -[hidden]right- Refreshable
+Refreshable -[hidden]right- SimpleTextWatcher
+BaseFragment <|-- HistoryFragment
+BaseFragment <|-- BalanceFragment
+BaseFragment <|-- SummaryFragment
+HistoryFragment -[hidden]- MembersFragment
+BalanceFragment -[hidden]- GroupAdapter
+SummaryFragment -[hidden]- TransactionAdapter
+
+legend bottom left
+<b>Bold</b> = new or changed since Project 2.2 (changed members say what they were); <s><color:#888888>struck through</color></s> = removed; plain = unchanged; «new» = class added since Project 2.2; <u>underlined</u> = static.
+Every fragment extends BaseFragment and implements Refreshable.
+endlegend
+@enduml

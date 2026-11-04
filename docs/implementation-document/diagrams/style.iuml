@@ -1,0 +1,54 @@
+' Shared look for every diagram in the revised Team 04 implementation document.
+' Convention (Preface): bold = new or changed since Project 2.2 (changed items say what
+' they were); struck through and grey = removed; plain = unchanged.
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 11
+skinparam defaultFontColor #111111
+skinparam roundCorner 4
+skinparam ArrowColor #333333
+skinparam ArrowFontSize 10
+skinparam BackgroundColor #FFFFFF
+skinparam titleFontSize 13
+skinparam titleFontStyle bold
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  HeaderBackgroundColor #FFFFFF
+  FontStyle bold
+  StereotypeFontSize 9
+}
+skinparam package {
+  BackgroundColor #FCFCFC
+  BorderColor #999999
+  FontSize 10
+  FontStyle bold
+}
+skinparam note {
+  BackgroundColor #F4F4F4
+  BorderColor #999999
+  FontSize 10
+}
+skinparam legend {
+  BackgroundColor #FFFFFF
+  BorderColor #FFFFFF
+  FontSize 9
+}
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #333333
+  ActorBackgroundColor #FFFFFF
+  ActorBorderColor #333333
+  LifeLineBorderColor #AAAAAA
+  GroupBorderColor #777777
+  GroupBackgroundColor #FFFFFF
+  BoxBorderColor #999999
+  MessageAlignment center
+}
+skinparam sequenceMessageAlign center
+hide empty members
+hide circle
+set separator none
+skinparam packageStyle frame
