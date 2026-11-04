@@ -1,5 +1,6 @@
 package com.team04.splitsmart.logic.history;
 
+import com.team04.splitsmart.logic.validation.DateProvider;
 import com.team04.splitsmart.model.Expense;
 import com.team04.splitsmart.model.Transaction;
 
@@ -7,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeSet;
 
 /**
  * Applies a {@link HistoryQuery} to transactions that are already loaded (FR 5.6). Filtering is
@@ -41,6 +43,18 @@ public class HistoryFilter {
         return result;
     }
 
+    /** Distinct transaction months, including months that contain only settlements. */
+    public List<String> availableMonths(List<? extends Transaction> transactions) {
+        TreeSet<String> months = new TreeSet<>(Comparator.reverseOrder());
+        for (Transaction transaction : transactions) {
+            String month = DateProvider.monthOf(transaction.getDate());
+            if (!month.isEmpty()) {
+                months.add(month);
+            }
+        }
+        return new ArrayList<>(months);
+    }
+
     /** Sorts in place by creation time. */
     public void sort(List<Transaction> transactions, SortOrder order) {
         if (order == SortOrder.OLDEST_FIRST) {
@@ -61,6 +75,10 @@ public class HistoryFilter {
             }
         }
         if (query.getMemberFilter() != null && !transaction.involves(query.getMemberFilter())) {
+            return false;
+        }
+        if (query.getMonthFilter() != null
+                && !query.getMonthFilter().equals(DateProvider.monthOf(transaction.getDate()))) {
             return false;
         }
         return keyword.isEmpty() || matchesKeyword(transaction, keyword, query.isMatchCase());

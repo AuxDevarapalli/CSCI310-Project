@@ -2,6 +2,7 @@ package com.team04.splitsmart.data;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -96,11 +97,15 @@ public class GroupRepository {
     }
 
     /** Owner-only edit of the name and description (FR 1.7). */
-    public void updateGroup(String groupId, String name, String description,
+    public void updateGroup(String groupId, String name, String description, byte[] photo,
                             DataCallback<Void> callback) {
         Map<String, Object> changes = new HashMap<>();
         changes.put(FirestoreMapper.NAME, name);
         changes.put(FirestoreMapper.DESCRIPTION, description);
+        if (photo != null) {
+            changes.put(FirestoreMapper.GROUP_PHOTO,
+                    photo.length == 0 ? FieldValue.delete() : Blob.fromBytes(photo));
+        }
         db.collection(FirestoreMapper.GROUPS).document(groupId).update(changes)
                 .addOnSuccessListener(ignored -> callback.onSuccess(null))
                 .addOnFailureListener(e -> callback.onFailure(FirebaseErrors.wrap(e)));

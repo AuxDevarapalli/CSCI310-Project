@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -64,6 +65,7 @@ public class GroupAdapter extends ListAdapter<GroupListItem, GroupAdapter.Holder
 
     class Holder extends RecyclerView.ViewHolder {
         private final TextView avatar;
+        private final ImageView photo;
         private final TextView name;
         private final TextView description;
         private final TextView meta;
@@ -73,6 +75,7 @@ public class GroupAdapter extends ListAdapter<GroupListItem, GroupAdapter.Holder
         Holder(View itemView) {
             super(itemView);
             avatar = itemView.findViewById(R.id.group_avatar);
+            photo = itemView.findViewById(R.id.group_avatar_photo);
             name = itemView.findViewById(R.id.group_name);
             description = itemView.findViewById(R.id.group_description);
             meta = itemView.findViewById(R.id.group_meta);
@@ -84,6 +87,7 @@ public class GroupAdapter extends ListAdapter<GroupListItem, GroupAdapter.Holder
             Context context = itemView.getContext();
             Group group = item.getGroup();
             UiUtils.bindAvatar(avatar, UiUtils.initialsOf(group.getName()), group.getId());
+            GroupPhoto.bind(photo, group.getPhoto());
             name.setText(group.getName());
             description.setText(group.getDescription());
             UiUtils.setVisible(description, group.hasDescription());
@@ -94,11 +98,15 @@ public class GroupAdapter extends ListAdapter<GroupListItem, GroupAdapter.Holder
                     : members);
 
             UiUtils.setVisible(secondBalanceLine, false);
+            firstBalanceLine.setBackgroundResource(0);
+            firstBalanceLine.setPadding(0, 0, 0, 0);
+            firstBalanceLine.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
             if (!item.isBalanceLoaded()) {
                 firstBalanceLine.setText("");
             } else if (item.isSettled()) {
-                firstBalanceLine.setText(R.string.balance_settled_short);
-                firstBalanceLine.setTextColor(UiUtils.color(context, R.color.amount_neutral));
+                firstBalanceLine.setText(R.string.home_settled_badge);
+                firstBalanceLine.setBackgroundResource(R.drawable.bg_settled_badge);
+                firstBalanceLine.setTextColor(UiUtils.color(context, R.color.amount_positive));
             } else {
                 showLine(firstBalanceLine, item.getTotalToPayCents(), item.getTotalToReceiveCents());
                 if (item.getTotalToPayCents() > 0 && item.getTotalToReceiveCents() > 0) {
