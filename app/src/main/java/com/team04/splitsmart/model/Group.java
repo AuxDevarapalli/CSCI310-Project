@@ -1,6 +1,7 @@
 package com.team04.splitsmart.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -10,15 +11,22 @@ import java.util.Objects;
  * user who may edit or delete the group or add members (FR 1.5, FR 1.7).
  */
 public class Group {
+    public static final int MAX_PHOTO_BYTES = 32 * 1024;
     private final String id;
     private final String name;
     private final String description;
     private final String ownerId;
     private final List<String> memberIds;
     private final long createdAt;
+    private final byte[] photo;
 
     public Group(String id, String name, String description, String ownerId,
                  List<String> memberIds, long createdAt) {
+        this(id, name, description, ownerId, memberIds, createdAt, null);
+    }
+
+    public Group(String id, String name, String description, String ownerId,
+                 List<String> memberIds, long createdAt, byte[] photo) {
         this.id = id;
         this.name = name == null ? "" : name;
         this.description = description == null ? "" : description;
@@ -27,6 +35,8 @@ public class Group {
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(memberIds));
         this.createdAt = createdAt;
+        this.photo = photo == null || photo.length == 0 || photo.length > MAX_PHOTO_BYTES
+                ? null : photo.clone();
     }
 
     public String getId() {
@@ -62,6 +72,14 @@ public class Group {
         return createdAt;
     }
 
+    public byte[] getPhoto() {
+        return photo == null ? null : photo.clone();
+    }
+
+    public Group withPhoto(byte[] photo) {
+        return new Group(id, name, description, ownerId, memberIds, createdAt, photo);
+    }
+
     public boolean isMember(String uid) {
         return uid != null && memberIds.contains(uid);
     }
@@ -72,7 +90,7 @@ public class Group {
 
     /** Returns a copy with an updated name and description (FR 1.7). */
     public Group withDetails(String newName, String newDescription) {
-        return new Group(id, newName, newDescription, ownerId, memberIds, createdAt);
+        return new Group(id, newName, newDescription, ownerId, memberIds, createdAt, photo);
     }
 
     /** Returns a copy with one more member appended (FR 1.5). */
@@ -82,19 +100,19 @@ public class Group {
         }
         List<String> ids = new ArrayList<>(memberIds);
         ids.add(uid);
-        return new Group(id, name, description, ownerId, ids, createdAt);
+        return new Group(id, name, description, ownerId, ids, createdAt, photo);
     }
 
     /** Returns a copy without {@code uid} (a member was removed or left). */
     public Group withoutMember(String uid) {
         List<String> ids = new ArrayList<>(memberIds);
         ids.remove(uid);
-        return new Group(id, name, description, ownerId, ids, createdAt);
+        return new Group(id, name, description, ownerId, ids, createdAt, photo);
     }
 
     /** Returns a copy owned by {@code newOwnerId}, who must already be a member. */
     public Group withOwner(String newOwnerId) {
-        return new Group(id, name, description, newOwnerId, memberIds, createdAt);
+        return new Group(id, name, description, newOwnerId, memberIds, createdAt, photo);
     }
 
     @Override
@@ -107,11 +125,13 @@ public class Group {
                 && name.equals(other.name)
                 && description.equals(other.description)
                 && Objects.equals(ownerId, other.ownerId)
-                && memberIds.equals(other.memberIds);
+                && memberIds.equals(other.memberIds)
+                && Arrays.equals(photo, other.photo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, ownerId, memberIds, createdAt);
+        return 31 * Objects.hash(id, name, description, ownerId, memberIds, createdAt)
+                + Arrays.hashCode(photo);
     }
 }
