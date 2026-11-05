@@ -184,4 +184,11 @@ public class HistoryFilterTest {
         assertTrue(filter.apply(all, query).isEmpty());
         assertFalse(HistoryQuery.defaults().isFiltered());
     }
+
+    @Test
+    public void keywordWithRegexSpecialCharactersDoesNotCrash() {
+        HistoryQuery query = HistoryQuery.defaults();
+        query.setKeyword("[.*+?^${}()|\\/]");
+        assertTrue(filter.apply(all, query).isEmpty());
+    }
 }

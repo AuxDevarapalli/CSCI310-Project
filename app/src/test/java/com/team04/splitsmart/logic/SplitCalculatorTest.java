@@ -42,6 +42,21 @@ public class SplitCalculatorTest {
     }
 
     @Test
+    public void equalSplit_totalLessThanParticipants_allocatesSingleCentsFirst() {
+        // $0.02 split 5 ways -> 2 people get $0.01, 3 people get $0.00
+        List<Share> shares = calculator.splitEqual(2, Arrays.asList("a", "b", "c", "d", "e"));
+        assertAmounts(shares, 1, 1, 0, 0, 0);
+        assertEquals(2, SplitCalculator.sum(shares));
+    }
+
+    @Test
+    public void equalSplit_singleParticipant_getsFullAmount() {
+        List<Share> shares = calculator.splitEqual(500, java.util.Collections.singletonList(ALICE));
+        assertAmounts(shares, 500);
+        assertEquals(500, SplitCalculator.sum(shares));
+    }
+
+    @Test
     public void equalSplit_sharesNeverDifferByMoreThanOneCent() {
         for (long total = 1; total <= 2000; total += 7) {
             for (int people = 2; people <= 7; people++) {
