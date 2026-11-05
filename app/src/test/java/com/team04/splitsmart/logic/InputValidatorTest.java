@@ -50,6 +50,7 @@ public class InputValidatorTest {
 
     @Test
     public void registration_requiresTenDigitUscId() {
+        assertTrue(validator.validateRegistration("Tommy", "t@usc.edu", "0012345678", "secret").isValid());
         assertField(validator.validateRegistration("T", "t@usc.edu", "123456789", "secret"),
                 ValidationResult.FIELD_USC_ID);
         assertField(validator.validateRegistration("T", "t@usc.edu", "12345678901", "secret"),
@@ -64,8 +65,10 @@ public class InputValidatorTest {
     public void registration_requiresNameAndPassword() {
         assertField(validator.validateRegistration("  ", "t@usc.edu", "1234567890", "secret"),
                 ValidationResult.FIELD_NAME);
+        // 5 characters is rejected; 6 characters is accepted
         assertField(validator.validateRegistration("T", "t@usc.edu", "1234567890", "12345"),
                 ValidationResult.FIELD_PASSWORD);
+        assertTrue(validator.validateRegistration("T", "t@usc.edu", "1234567890", "123456").isValid());
         assertField(validator.validateRegistration("T", "t@usc.edu", "1234567890", "secret", "secreT"),
                 ValidationResult.FIELD_CONFIRM_PASSWORD);
     }
