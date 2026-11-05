@@ -112,6 +112,18 @@ public class BalanceCalculatorTest {
     }
 
     @Test
+    public void overSettlementFlipsBalance() {
+        // Alice owes Bob $10.00, but settles $15.00 -> now Bob owes Alice $5.00
+        List<Transaction> txs = Arrays.asList(
+                expense(BOB, share(BOB, 1000), share(ALICE, 1000)),
+                settlement(ALICE, BOB, 1500));
+        assertEquals(500, calculator.netBetween(ALICE, BOB, txs));
+        assertEquals(-500, calculator.netBetween(BOB, ALICE, txs));
+        assertEquals(500, calculator.amountOwed(BOB, ALICE, txs));
+        assertEquals(0, calculator.amountOwed(ALICE, BOB, txs));
+    }
+
+    @Test
     public void transactionsWithAThirdMemberDoNotAffectThePair() {
         List<Transaction> txs = Arrays.asList(
                 expense(CAROL, share(CAROL, 500), share(DAVID, 500)),
