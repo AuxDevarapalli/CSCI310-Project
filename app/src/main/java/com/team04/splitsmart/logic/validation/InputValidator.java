@@ -195,13 +195,18 @@ public class InputValidator {
                     "Select at least one other participant besides the payer");
         }
         if (expense.getSplitMethod() == SplitMethod.PERCENTAGE) {
-            int totalBasisPoints = 0;
+            long totalBasisPoints = 0;
             for (Share share : expense.getShares()) {
+                if (share.getPercentBasisPoints() < 0) {
+                    return ValidationResult.error(ValidationResult.FIELD_SPLIT,
+                            "Percentages cannot be negative");
+                }
                 totalBasisPoints += share.getPercentBasisPoints();
             }
             if (totalBasisPoints != Money.FULL_PERCENT_BASIS_POINTS) {
                 return ValidationResult.error(ValidationResult.FIELD_SPLIT,
-                        "Percentages add up to " + Money.formatPercent(totalBasisPoints)
+                        "Percentages add up to " + java.math.BigDecimal.valueOf(totalBasisPoints, 2)
+                                .stripTrailingZeros().toPlainString() + "%"
                                 + ", not 100%");
             }
         }

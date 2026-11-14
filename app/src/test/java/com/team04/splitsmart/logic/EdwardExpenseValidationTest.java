@@ -13,7 +13,7 @@ import org.junit.Test;
 /** Project 2.4 white-box tests. Author: Edward Zhao (ebzhao@usc.edu). */
 public class EdwardExpenseValidationTest {
     private final InputValidator validator = new InputValidator();
-    private final Group members = group(ALICE, BOB);
+    private final Group members = group(ALICE, BOB, CAROL);
 
     // EZ-W01: Reach the title-length guard with otherwise valid data.
     @Test public void titleLengthBoundary() {
@@ -54,6 +54,41 @@ public class EdwardExpenseValidationTest {
         assertError(validate("Dinner", 1000, "N".repeat(301), SplitMethod.EXACT,
                 share(ALICE, 500), share(BOB, 500)), ValidationResult.FIELD_NOTE,
                 "Note must be at most 300 characters");
+    }
+
+    // EZ-W06: Nonnegative monetary shares must not hide a negative percentage.
+    @Test public void negativePercentageRejectedEvenWhenTotalsMatch() {
+        assertError(validate("Dinner", 1000, "", SplitMethod.PERCENTAGE,
+                new Share(ALICE, 0, -1000), new Share(BOB, 1000, 11000)),
+                ValidationResult.FIELD_SPLIT, "Percentages cannot be negative");
+    }
+
+    // EZ-W07: A 32-bit sum must not wrap an invalid percentage total back to 100%.
+    @Test public void overflowingPercentageTotalRejected() {
+        ValidationResult result = validate("Dinner", 1000, "", SplitMethod.PERCENTAGE,
+                new Share(ALICE, 0, Integer.MAX_VALUE),
+                new Share(BOB, 500, Integer.MAX_VALUE), new Share(CAROL, 500, 10002));
+        assertError(result, ValidationResult.FIELD_SPLIT,
+                "Percentages add up to 42949772.96%, not 100%");
+    }
+
+    // EZ-W08: Zero-percent participants are valid; test the successful percentage path.
+    @Test public void zeroPercentageParticipantAccepted() {
+        assertTrue(validate("Dinner", 1000, "", SplitMethod.PERCENTAGE,
+                new Share(ALICE, 1000, 10000), new Share(BOB, 0, 0)).isValid());
+    }
+
+    // EZ-W09: A correct percentage total must still reach the monetary-sum guard.
+    @Test public void validPercentagesDoNotBypassAmountSum() {
+        assertError(validate("Dinner", 1000, "", SplitMethod.PERCENTAGE,
+                new Share(ALICE, 499, 5000), new Share(BOB, 500, 5000)),
+                ValidationResult.FIELD_SPLIT, "Amounts add up to $9.99, not $10.00");
+    }
+
+    // EZ-W10: Empty shares exit through payer inclusion rather than total validation.
+    @Test public void emptySharesRejected() {
+        assertError(validate("Dinner", 1000, "", SplitMethod.EXACT),
+                ValidationResult.FIELD_PARTICIPANTS, "The payer must be one of the participants");
     }
 
     private ValidationResult validate(String title, long total, String note,
