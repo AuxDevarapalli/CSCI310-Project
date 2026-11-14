@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.team04.splitsmart.ui.CategoryBreakdownPanelTest" tests="14" failures="0" errors="0" skipped="0" time="17.587" timestamp="2026-11-14T01:37:26" hostname="localhost">
+  <properties>
+    <property name="device" value="Pixel_4(AVD) - 13" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="categoryRowsUpdateAndRemainSelectableInDarkMode" classname="com.team04.splitsmart.ui.CategoryBreakdownPanelTest" time="0.011" />
+  <testcase name="categoryRowsUpdateAndRemainSelectableInLightMode" classname="com.team04.splitsmart.ui.CategoryBreakdownPanelTest" time="0.002" />
+  <testcase name="blankNameShowsRequiredError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.962" />
+  <testcase name="mismatchedConfirmationShowsError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.532" />
+  <testcase name="correctingEmailClearsPreviousLoginError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.825" />
+  <testcase name="nineDigitIdShowsLengthError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.856" />
+  <testcase name="missingEmailLocalPartShowsFormatError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.559" />
+  <testcase name="nonUscEmailShowsDomainError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.594" />
+  <testcase name="blankLoginPasswordShowsRequiredError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.448" />
+  <testcase name="shortPasswordShowsMinimumError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.935" />
+  <testcase name="alphabeticIdShowsFormatError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.594" />
+  <testcase name="blankLoginEmailShowsRequiredError" classname="com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest" time="1.49" />
+  <testcase name="trendRowsRenderAndSelectAMonthInLightMode" classname="com.team04.splitsmart.ui.SpendingInsightsPanelTest" time="0.03" />
+  <testcase name="trendRowsRenderAndSelectAMonthInDarkMode" classname="com.team04.splitsmart.ui.SpendingInsightsPanelTest" time="0.002" />
+</testsuite>

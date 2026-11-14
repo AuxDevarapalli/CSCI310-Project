@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.InputValidatorTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.186Z" hostname="MacBook-Pro-2.local" time="0.003">
+  <properties/>
+  <testcase name="registration_requiresTenDigitUscId" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.001"/>
+  <testcase name="settlement_mustBePositiveAndAtMostWhatIsOwed" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="registration_acceptsValidInput" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_requiresAnotherParticipantBesidesThePayer" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="group_requiresName" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_requiresPayerAmongParticipants" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="settlementRecordedByTheMemberWhoWasPaidHasTheSameLimits" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_requiresMembers" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.001"/>
+  <testcase name="expense_validExpensePasses" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="registration_requiresNameAndPassword" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="normalizeEmail_isCaseInsensitive" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="registration_requiresUscEmail" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_requiresTitleAndPositiveAmount" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_requiresSharesToAddUp" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.0"/>
+  <testcase name="expense_percentageSplitMustTotalOneHundredPercent" classname="com.team04.splitsmart.logic.InputValidatorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

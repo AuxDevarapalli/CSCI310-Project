@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.MoneyTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.190Z" hostname="MacBook-Pro-2.local" time="0.002">
+  <properties/>
+  <testcase name="parseDollars_rejectsAmountsAboveTheLimit" classname="com.team04.splitsmart.logic.MoneyTest" time="0.001"/>
+  <testcase name="parseDollars_acceptsTheLimitItself" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="formatPercent_dropsUnneededZeros" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="parsePercent_returnsBasisPoints" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="parseDollars_acceptsCommonFormats" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="parsePercent_rejectsInvalidInput" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="parseDollars_rejectsMoreThanTwoDecimalPlaces" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="parseDollars_rejectsInvalidInput" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="formatPlain_isSuitableForInputFields" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <testcase name="format_usesDollarSignAndTwoDecimals" classname="com.team04.splitsmart.logic.MoneyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

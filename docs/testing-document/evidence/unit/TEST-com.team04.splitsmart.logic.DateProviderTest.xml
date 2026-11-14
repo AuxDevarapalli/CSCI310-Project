@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.DateProviderTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.153Z" hostname="MacBook-Pro-2.local" time="0.015">
+  <properties/>
+  <testcase name="monthHelpers" classname="com.team04.splitsmart.logic.DateProviderTest" time="0.011"/>
+  <testcase name="todayUsesTheLocalTimeZone" classname="com.team04.splitsmart.logic.DateProviderTest" time="0.004"/>
+  <testcase name="todayUsesYearMonthDayFormat" classname="com.team04.splitsmart.logic.DateProviderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

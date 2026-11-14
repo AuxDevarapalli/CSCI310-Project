@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.HistoryCsvTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.176Z" hostname="MacBook-Pro-2.local" time="0.004">
+  <properties/>
+  <testcase name="emptyExportHasJustTheColumnHeaders" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.001"/>
+  <testcase name="protectsFormulaPrefixesWithLeadingUnicodeWhitespace" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.0"/>
+  <testcase name="escapesQuotesCommasAndMultilineNotesWithoutDiscardingUnicode" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.001"/>
+  <testcase name="includesActualPayerRecipientAndSharesButNoAccountIdentifiers" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.0"/>
+  <testcase name="protectsFormulaLikeTitlesNamesAndNotes" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.0"/>
+  <testcase name="keepsFilterResultsAndDisplayedSortOrder" classname="com.team04.splitsmart.logic.HistoryCsvTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
