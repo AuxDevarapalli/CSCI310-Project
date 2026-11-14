@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.EdwardExpenseValidationTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.171Z" hostname="MacBook-Pro-2.local" time="0.004">
+  <properties/>
+  <testcase name="duplicateParticipantRejectedEvenWhenTotalMatches" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="amountMaximumBoundary" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.001"/>
+  <testcase name="negativeShareRejectedEvenWhenTotalMatches" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.001"/>
+  <testcase name="overflowingPercentageTotalRejected" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.001"/>
+  <testcase name="titleLengthBoundary" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="noteLengthBoundary" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="emptySharesRejected" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="validPercentagesDoNotBypassAmountSum" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="negativePercentageRejectedEvenWhenTotalsMatch" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <testcase name="zeroPercentageParticipantAccepted" classname="com.team04.splitsmart.logic.EdwardExpenseValidationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

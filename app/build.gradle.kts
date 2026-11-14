@@ -1,4 +1,7 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
+    jacoco
     alias(libs.plugins.android.application)
 }
 
@@ -34,6 +37,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -71,4 +77,27 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+// Local JVM coverage of business logic and models; Android/Firebase code is excluded.
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
+    dependsOn("testDebugUnitTest")
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    })
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(fileTree(
+        layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")
+    ) {
+        include("com/team04/splitsmart/logic/**/*.class")
+        include("com/team04/splitsmart/model/**/*.class")
+    })
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }

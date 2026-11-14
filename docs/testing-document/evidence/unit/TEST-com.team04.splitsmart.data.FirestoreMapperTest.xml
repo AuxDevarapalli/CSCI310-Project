@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.data.FirestoreMapperTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.139Z" hostname="MacBook-Pro-2.local" time="0.007">
+  <properties/>
+  <testcase name="groupToMap_mapsAllFieldsCorrectly" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.004"/>
+  <testcase name="asStringList_handlesVariousTypesAndNulls" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.0"/>
+  <testcase name="expenseToMap_mapsAllFieldsAndSharesCorrectly" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.002"/>
+  <testcase name="userToMap_mapsAllFieldsCorrectly" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.001"/>
+  <testcase name="asLong_handlesVariousTypesAndNulls" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.0"/>
+  <testcase name="settlementToMap_mapsAllFieldsCorrectly" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.0"/>
+  <testcase name="uscIdToMap_mapsUidCorrectly" classname="com.team04.splitsmart.data.FirestoreMapperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

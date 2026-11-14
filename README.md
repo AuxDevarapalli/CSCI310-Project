@@ -59,10 +59,50 @@ single-field filter, and sorting happens in the app.
 ./gradlew test
 ```
 
-Runs 74 JUnit tests for the business logic (money parsing/formatting, every split method
+Runs 122 JUnit tests for the business logic (money parsing/formatting, every split method
 and the FR 3.5 rounding rule, pairwise balances, validation, history filtering and
 case-sensitive search, monthly summaries, member-management helpers) using the exact examples
 from the customer description. They need no Firebase.
+
+### Project 2.4: Edward Zhao's testing contribution
+
+Edward Zhao wrote **10 white-box tests** in `EdwardExpenseValidationTest` and
+**10 Espresso black-box tests** in `EdwardRegistrationBlackBoxTest`. The
+[testing document](docs/testing-document/Team04_Project2.4_EdwardZhao_Testing.pdf)
+identifies each test, its inputs, rationale, result, and the two percentage-validation
+bugs fixed by this contribution. Rebuild the PDF with
+`python3 docs/testing-document/build_report.py` (requires `reportlab`).
+
+Run all local tests and generate JaCoCo coverage:
+
+```bash
+./gradlew jacocoDebugUnitTestReport
+```
+
+The HTML report is `app/build/reports/jacoco/jacocoDebugUnitTestReport/html/index.html`.
+Coverage measures business logic and models, excluding Android UI and Firebase code.
+
+With a disposable Android emulator running, run the Android suite:
+
+```bash
+./gradlew connectedDebugAndroidTest -Psplitsmart.emulatorHost=10.0.2.2
+```
+
+The new screen tests sign out the emulator app session and exercise invalid inputs;
+they require `app/google-services.json` but no running Firebase emulator servers.
+The build flag prevents use of the shared Firebase backend. To run only Edward's tests,
+add `-Pandroid.testInstrumentationRunnerArguments.class=com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest`.
+These tests do not create accounts or change database records.
+
+Verified November 13, 2026: **122/122 local tests and 14/14 Android tests passed**,
+including all 20 new tests. Full-unit-suite coverage was **712/783 lines (90.9%)** and
+**404/552 branches (73.2%)** in business logic/models. Captured XML evidence and the
+coverage summary are under `docs/testing-document/`.
+
+This document covers Edward's contribution; the five-member team still needs to combine
+and attribute its remaining system tests to meet the assignment's 25-per-type minimum.
+The four existing Android panel checks are component tests, not counted as additional
+system-level black-box cases in Edward's report.
 
 Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firestore emulator):
 
@@ -183,7 +223,7 @@ groups/{groupId}/transactions/{id}  type, creatorId, date (YYYY-MM-DD), createdA
 
 * Notifications when you are added to a group or an expense involves you (R12 in the
   implementation document analyses the design impact).
-* UI tests with Espresso, and ViewModel tests with fake repositories.
+* Broader Espresso system tests for groups, expenses, and settlements, and ViewModel tests with fake repositories.
 * A charts library for the monthly summary (charts are optional and not graded).
 
 ## 7. Troubleshooting

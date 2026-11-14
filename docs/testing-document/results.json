@@ -1,0 +1,92 @@
+{
+  "unit": {
+    "tests": 122,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "android": {
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "overall": {
+      "INSTRUCTION": {
+        "missed": 479,
+        "covered": 3514
+      },
+      "BRANCH": {
+        "missed": 148,
+        "covered": 404
+      },
+      "LINE": {
+        "missed": 71,
+        "covered": 712
+      },
+      "COMPLEXITY": {
+        "missed": 152,
+        "covered": 329
+      },
+      "METHOD": {
+        "missed": 28,
+        "covered": 177
+      },
+      "CLASS": {
+        "missed": 0,
+        "covered": 26
+      }
+    },
+    "validator": {
+      "INSTRUCTION": {
+        "missed": 49,
+        "covered": 475
+      },
+      "BRANCH": {
+        "missed": 20,
+        "covered": 86
+      },
+      "LINE": {
+        "missed": 10,
+        "covered": 104
+      },
+      "COMPLEXITY": {
+        "missed": 18,
+        "covered": 50
+      },
+      "METHOD": {
+        "missed": 1,
+        "covered": 14
+      },
+      "CLASS": {
+        "missed": 0,
+        "covered": 1
+      }
+    },
+    "expense": {
+      "INSTRUCTION": {
+        "missed": 0,
+        "covered": 214
+      },
+      "BRANCH": {
+        "missed": 1,
+        "covered": 35
+      },
+      "LINE": {
+        "missed": 0,
+        "covered": 44
+      },
+      "COMPLEXITY": {
+        "missed": 1,
+        "covered": 18
+      },
+      "METHOD": {
+        "missed": 0,
+        "covered": 1
+      }
+    }
+  },
+  "date": "2026-11-13",
+  "environment": "Pixel_4 Android 13 API 33; JBR 21.0.11; Gradle 8.14.3"
+}

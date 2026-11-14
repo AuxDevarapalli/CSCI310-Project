@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.BalanceCalculatorTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.149Z" hostname="MacBook-Pro-2.local" time="0.003">
+  <properties/>
+  <testcase name="transactionsWithAThirdMemberDoNotAffectThePair" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.001"/>
+  <testcase name="settlementsReduceTheBalance" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="computeTotalsMatchesComputeSummary" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.001"/>
+  <testcase name="payerOwesNothingForOwnShare" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="recipientRecordedSettlementUsesActualPayerForBalance" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="summaryListsEveryOtherMember" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="overSettlementFlipsBalance" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="totalsAreKeptSeparateAndNeverNetted" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="fullSettlementClearsTheBalance" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="individualBalanceCombinesEveryTransactionBetweenThePair" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <testcase name="debtsAreNeverSimplifiedAcrossPairs" classname="com.team04.splitsmart.logic.BalanceCalculatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

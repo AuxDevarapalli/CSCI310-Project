@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.SplitCalculatorTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.202Z" hostname="MacBook-Pro-2.local" time="0.006">
+  <properties/>
+  <testcase name="checkPercentages_rejectsNegativeValues" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="percentSplit_alwaysAddsUpWhenPercentagesAreValid" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="exactSplit_usesTypedAmounts" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.001"/>
+  <testcase name="percentSplit_leftoverCentSkipsZeroPercentParticipants" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="negativeTotalsAreRejected" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="percentSplit_invalidPercentagesAreNotPatchedUp" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_tenDollarsThreeWays_givesExtraCentToFirst" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="checkPercentages_requiresExactlyOneHundred" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_sharesNeverDifferByMoreThanOneCent" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.005"/>
+  <testcase name="checkSum_explainsTheDifference" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_singleParticipant_getsFullAmount" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="percentSplit_fiftyFiftyOfTenOhOne_matchesFr35" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_evenAmount_hasNoRemainder" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_tenOhOneThreeWays_matchesFr35" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <testcase name="equalSplit_totalLessThanParticipants_allocatesSingleCentsFirst" classname="com.team04.splitsmart.logic.SplitCalculatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

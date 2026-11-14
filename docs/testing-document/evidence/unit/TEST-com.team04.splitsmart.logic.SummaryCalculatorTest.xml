@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.team04.splitsmart.logic.SummaryCalculatorTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-14T01:37:48.210Z" hostname="MacBook-Pro-2.local" time="0.0">
+  <properties/>
+  <testcase name="settlementsAreNotIncluded" classname="com.team04.splitsmart.logic.SummaryCalculatorTest" time="0.0"/>
+  <testcase name="categoryTotalsAddUpToTheTotal" classname="com.team04.splitsmart.logic.SummaryCalculatorTest" time="0.0"/>
+  <testcase name="emptyMonthShowsZeros" classname="com.team04.splitsmart.logic.SummaryCalculatorTest" time="0.0"/>
+  <testcase name="listsMonthsWithExpensesNewestFirst" classname="com.team04.splitsmart.logic.SummaryCalculatorTest" time="0.0"/>
+  <testcase name="countsAndTotalsOnlyThatMonthsExpenses" classname="com.team04.splitsmart.logic.SummaryCalculatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
