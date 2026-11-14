@@ -59,6 +59,50 @@ public class EdwardRegistrationBlackBoxTest {
                 R.id.register_usc_id, "USC ID must be exactly 10 digits");
     }
 
+    // EZ-B06: Five characters is just below the six-character password minimum.
+    @Test public void shortPasswordShowsMinimumError() {
+        reject("Edward", "edward.test@usc.edu", "1234567890", "12345", "12345",
+                R.id.register_password, "Password must be at least 6 characters");
+    }
+
+    // EZ-B07: Confirmation differs only by case, which must still be rejected.
+    @Test public void mismatchedConfirmationShowsError() {
+        reject("Edward", "edward.test@usc.edu", "1234567890", "secret", "secreT",
+                R.id.register_confirm, "Passwords do not match");
+    }
+
+    // EZ-B08: A blank login cannot be submitted without the required email.
+    @Test public void blankLoginEmailShowsRequiredError() {
+        try (ActivityScenario<LoginActivity> screen = ActivityScenario.launch(LoginActivity.class)) {
+            onView(withId(R.id.login_button)).perform(scrollTo(), click());
+            onView(withText("Enter your USC email")).check(matches(isDisplayed()));
+            onView(withId(R.id.login_button)).check(matches(isEnabled()));
+        }
+    }
+
+    // EZ-B09: Supplying the email must not permit a login with no password.
+    @Test public void blankLoginPasswordShowsRequiredError() {
+        try (ActivityScenario<LoginActivity> screen = ActivityScenario.launch(LoginActivity.class)) {
+            fill(R.id.login_email, "edward.test@usc.edu");
+            onView(withId(R.id.login_button)).perform(scrollTo(), click());
+            onView(withText("Enter your password")).check(matches(isDisplayed()));
+            onView(withId(R.id.login_button)).check(matches(isEnabled()));
+        }
+    }
+
+    // EZ-B10: Correcting one field removes its stale error and exposes the next error.
+    @Test public void correctingEmailClearsPreviousLoginError() {
+        try (ActivityScenario<LoginActivity> screen = ActivityScenario.launch(LoginActivity.class)) {
+            onView(withId(R.id.login_button)).perform(scrollTo(), click());
+            onView(withText("Enter your USC email")).check(matches(isDisplayed()));
+            fill(R.id.login_email, "edward.test@usc.edu");
+            onView(withId(R.id.login_button)).perform(scrollTo(), click());
+            onView(withText("Enter your password")).check(matches(isDisplayed()));
+            onView(withText("Enter your USC email")).check(
+                    androidx.test.espresso.assertion.ViewAssertions.doesNotExist());
+        }
+    }
+
     private void reject(String name, String email, String id, String password,
                         String confirm, int errorInput, String message) {
         try (ActivityScenario<RegisterActivity> screen = ActivityScenario.launch(RegisterActivity.class)) {
