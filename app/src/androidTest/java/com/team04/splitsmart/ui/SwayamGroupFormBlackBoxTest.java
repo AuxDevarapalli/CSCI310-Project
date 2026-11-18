@@ -13,6 +13,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.team04.splitsmart.BuildConfig;
 import com.team04.splitsmart.R;
 
@@ -27,8 +30,9 @@ import java.util.concurrent.TimeUnit;
  * Group creation form (FR 1.4): required name, name and description length limits
  * and the error-recovery transition, observed only through the real screen. These
  * tests need a signed-in session, so unlike the registration tests they require the
- * Firebase Auth emulator to be running (firebase.json maps it to port 9099);
- * invalid-input cases still stop before any Firestore write. Build with
+ * Firebase Auth emulator to be running (firebase.json maps it to port 9099). The
+ * invalid-input cases still stop before any Firestore write, but SW-B03 saves a
+ * group, so the Firestore emulator (port 8080) must be running too. Build with
  * -Psplitsmart.emulatorHost=10.0.2.2.
  */
 @RunWith(AndroidJUnit4.class)
@@ -77,15 +81,17 @@ public class SwayamGroupFormBlackBoxTest {
     }
 
     // SW-B03: Exactly fifty characters is the accepted side of the name boundary;
-    // no error appears and the save attempt starts.
-    @Test public void fiftyCharNamePassesValidation() {
+    // the save completes and the group detail screen shows the new group. The name
+    // is unique to this run so the cleanup removes only what this run created.
+    @Test public void fiftyCharNamePassesValidation() throws Exception {
+        String groupName = uniqueFiftyCharName();
         try (ActivityScenario<GroupFormActivity> screen =
                      ActivityScenario.launch(GroupFormActivity.class)) {
-            fill(R.id.group_name, repeat('a', 50));
+            fill(R.id.group_name, groupName);
             onView(withId(R.id.group_save_button)).perform(scrollTo(), click());
-            onView(withText(NAME_ERROR)).check(doesNotExist());
-            onView(withText(NAME_LENGTH_ERROR)).check(doesNotExist());
-            onView(withText(DESCRIPTION_LENGTH_ERROR)).check(doesNotExist());
+            waitForViewWithText(groupName);
+        } finally {
+            deleteGroupsNamed(groupName);
         }
     }
 
@@ -126,5 +132,57 @@ public class SwayamGroupFormBlackBoxTest {
         char[] chars = new char[count];
         java.util.Arrays.fill(chars, c);
         return new String(chars);
+    }
+
+    /** Exactly fifty characters, unique per run: "SW-B03-" plus a timestamp, padded. */
+    private static String uniqueFiftyCharName() {
+        StringBuilder name = new StringBuilder("SW-B03-" + System.currentTimeMillis());
+        while (name.length() < 50) {
+            name.append('a');
+        }
+        return name.substring(0, 50);
+    }
+
+    private static void waitForViewWithText(String expectedText) throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                onView(withText(expectedText)).check(matches(isDisplayed()));
+                return;
+            } catch (Throwable notReady) {
+                Thread.sleep(200);
+            }
+        }
+        onView(withText(expectedText)).check(matches(isDisplayed()));
+    }
+
+    /**
+     * Deletes this run's group, whether the test passed or failed. The save is
+     * asynchronous, so a failed run may reach cleanup before the write lands;
+     * poll briefly so that group is still found and removed.
+     */
+    private static void deleteGroupsNamed(String groupName) throws Exception {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) {
+            return;
+        }
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        long deadline = System.currentTimeMillis() + 10_000;
+        do {
+            QuerySnapshot snap = Tasks.await(db.collection("groups")
+                    .whereArrayContains("memberIds", uid)
+                    .get(), 10, TimeUnit.SECONDS);
+            boolean deleted = false;
+            for (DocumentSnapshot doc : snap.getDocuments()) {
+                if (groupName.equals(doc.getString("name"))) {
+                    Tasks.await(doc.getReference().delete(), 10, TimeUnit.SECONDS);
+                    deleted = true;
+                }
+            }
+            if (deleted) {
+                return;
+            }
+            Thread.sleep(500);
+        } while (System.currentTimeMillis() < deadline);
     }
 }
