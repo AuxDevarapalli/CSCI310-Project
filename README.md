@@ -59,19 +59,24 @@ single-field filter, and sorting happens in the app.
 ./gradlew test
 ```
 
-Runs 122 JUnit tests for the business logic (money parsing/formatting, every split method
+Runs the 142 JUnit tests for the business logic (money parsing/formatting, every split method
 and the FR 3.5 rounding rule, pairwise balances, validation, history filtering and
-case-sensitive search, monthly summaries, member-management helpers) using the exact examples
-from the customer description. They need no Firebase.
+case-sensitive search, monthly summaries, member-management helpers), including the
+Project 2.4 white-box tests. They need no Firebase.
 
-### Project 2.4: Edward Zhao's testing contribution
+### Project 2.4 testing
 
-Edward Zhao wrote **10 white-box tests** in `EdwardExpenseValidationTest` and
-**10 Espresso black-box tests** in `EdwardRegistrationBlackBoxTest`. The
-[testing document](docs/testing-document/Team04_Project2.4_EdwardZhao_Testing.pdf)
-identifies each test, its inputs, rationale, result, and the two percentage-validation
-bugs fixed by this contribution. Rebuild the PDF with
-`python3 docs/testing-document/build_report.py` (requires `reportlab`).
+The team's testing document lists every test with its location, inputs, rationale, result,
+and any bug it found. Each member wrote at least five Espresso black-box tests (in
+`app/src/androidTest/.../ui/`) and five JUnit white-box tests (in `app/src/test/.../logic/`):
+
+| Member | Black-box tests | White-box tests |
+|---|---|---|
+| Zachary Chung | `ZacharyHistorySummaryBlackBoxTest` (ZC-B01 to ZC-B05) | `ZacharyHistorySummaryTest` (ZC-W01 to ZC-W05) |
+| Aux Devarapalli | `AuxExpenseFormBlackBoxTest` (AD-B01 to AD-B05) | `AuxExpenseSplitTest` (AD-W01 to AD-W05) |
+| Edward Zhao | `EdwardRegistrationBlackBoxTest` (EZ-B01 to EZ-B10) | `EdwardExpenseValidationTest` (EZ-W01 to EZ-W10) |
+| Swayam Parekh | `SwayamGroupFormBlackBoxTest` (SW-B01 to SW-B05) | `SwayamCalculationEdgeTest` (SW-W01 to SW-W05) |
+| Brian Shi | `BrianBalanceBlackBoxTest` (BR-B01 to BR-B05) | `BrianBalancePresentationTest` (BR-W01 to BR-W05) |
 
 Run all local tests and generate JaCoCo coverage:
 
@@ -80,29 +85,27 @@ Run all local tests and generate JaCoCo coverage:
 ```
 
 The HTML report is `app/build/reports/jacoco/jacocoDebugUnitTestReport/html/index.html`.
-Coverage measures business logic and models, excluding Android UI and Firebase code.
+Coverage measures business logic and models, excluding Android UI and Firebase code. With
+all 142 unit tests it is 737/784 lines (94.0%), 450/552 branches (81.5%), and 3,639/3,998
+instructions (91.0%).
 
-With a disposable Android emulator running, run the Android suite:
+Most black-box tests sign in as the demo users, so start the local Firebase emulators and
+seed them first, then run the Android suite with an Android emulator running:
 
 ```bash
+cd firestore-tests && npm install && npm run emulators          # terminal 1, leave running
+cd firestore-tests && npm run seed:emulator                      # terminal 2
 ./gradlew connectedDebugAndroidTest -Psplitsmart.emulatorHost=10.0.2.2
 ```
 
-The new screen tests sign out the emulator app session and exercise invalid inputs;
-they require `app/google-services.json` but no running Firebase emulator servers.
-The build flag prevents use of the shared Firebase backend. To run only Edward's tests,
-add `-Pandroid.testInstrumentationRunnerArguments.class=com.team04.splitsmart.ui.EdwardRegistrationBlackBoxTest`.
-These tests do not create accounts or change database records.
-
-Verified November 13, 2026: **122/122 local tests and 14/14 Android tests passed**,
-including all 20 new tests. Full-unit-suite coverage was **712/783 lines (90.9%)** and
-**404/552 branches (73.2%)** in business logic/models. Captured XML evidence and the
-coverage summary are under `docs/testing-document/`.
-
-This document covers Edward's contribution; the five-member team still needs to combine
-and attribute its remaining system tests to meet the assignment's 25-per-type minimum.
-The four existing Android panel checks are component tests, not counted as additional
-system-level black-box cases in Edward's report.
+To run one class, add
+`-Pandroid.testInstrumentationRunnerArguments.class=com.team04.splitsmart.ui.<ClassName>`.
+The build flag keeps the tests off the shared Firebase backend, and they fail early without
+it. Edward's registration and login tests stop at input validation, so they need no
+Firebase emulators. The four Android panel tests (`CategoryBreakdownPanelTest`,
+`SpendingInsightsPanelTest`) are component tests and are not counted among the 30
+black-box tests. `docs/testing-document/` holds the generator and captured evidence from
+Edward's earlier standalone report.
 
 Security-rule tests (optional, needs Node.js 20+ and Java 21; starts the Firestore emulator):
 
