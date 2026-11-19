@@ -46,7 +46,7 @@ public class SplitCalculator {
             return ValidationResult.error(ValidationResult.FIELD_SPLIT,
                     "Enter a percentage for every participant");
         }
-        int total = 0;
+        long total = 0;
         for (Integer basisPoints : percentBasisPoints.values()) {
             if (basisPoints == null) {
                 return ValidationResult.error(ValidationResult.FIELD_SPLIT,
@@ -60,7 +60,8 @@ public class SplitCalculator {
         }
         if (total != Money.FULL_PERCENT_BASIS_POINTS) {
             return ValidationResult.error(ValidationResult.FIELD_SPLIT,
-                    "Percentages add up to " + Money.formatPercent(total) + ", not 100%");
+                    "Percentages add up to " + java.math.BigDecimal.valueOf(total, 2)
+                            .stripTrailingZeros().toPlainString() + "%, not 100%");
         }
         return ValidationResult.ok();
     }
